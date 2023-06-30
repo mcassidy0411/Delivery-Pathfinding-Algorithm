@@ -16,7 +16,7 @@ class HashMap:
 
     def add(self, key, value):
         key_hash = self.get_hash(key)
-        key_value = [value]
+        key_value = [key, value]
 
         if self.map[key_hash] is None:
             self.map[key_hash] = list([key_value])
@@ -31,10 +31,11 @@ class HashMap:
 
     def get(self, key):
         key_hash = self.get_hash(key)
+
         if self.map[key_hash] is not None:
             for item in self.map[key_hash]:
-                if item[0].package_id == key:
-                    return item[0]
+                if item[0] == key:
+                    return item[1]
         return None
 
     def delete(self, key):
@@ -78,35 +79,70 @@ def create_package_list():
             notes = line[7]
             if notes == '':
                 notes = None
-            h.add(line[0], Package(line[0], line[1], line[2], line[3], line[4], line[5], line[6], notes))
+            h.add(int(line[0]), Package(line[0], line[1], line[2], line[3], line[4], line[5], line[6], notes))
     return h
 
 
-def create_adjacency_matrix():
-    with open('csv/WGUPS_Distance_Table.csv') as distance_file:
-        csv_reader = csv.reader(distance_file)
-        adjacency_matrix = [line for line in csv_reader]
-        indices = [None] * len(adjacency_matrix)
+class AdjacencyMatrix:
+    def __init__(self):
+        with open('csv/WGUPS_Distance_Table.csv') as distance_file:
+            csv_reader = csv.reader(distance_file)
+            self.adjacency_matrix = [line for line in csv_reader]
+            self.indices = [None] * len(self.adjacency_matrix)
 
-        for i in range(len(adjacency_matrix)):
-            # Puts address in the correct format and moves to indices list.
-            # This list will look up index by address and vice versa
-            row = adjacency_matrix[i]
-            address = str(row.pop(0))
-            new_address = address.split('\n', 1)[-1].split(',', 1)[0].strip()
-            indices[i] = new_address
+            for i in range(len(self.adjacency_matrix)):
+                # Puts address in the correct format and moves to indices list.
+                # This list will look up index by address and vice versa
+                row = self.adjacency_matrix[i]
+                address = str(row.pop(0))
+                new_address = address.split('\n', 1)[-1].split(',', 1)[0].strip()
+                self.indices[i] = new_address
 
-            iterator = 1
-            for j in range(len(adjacency_matrix)):
-                if adjacency_matrix[i][j] == '':
-                    adjacency_matrix[i][j] = adjacency_matrix[i + iterator][j - iterator]
-                    iterator += 1
-        for i in range(len(adjacency_matrix)):
-            print(adjacency_matrix[i])
+                iterator = 1
+                for j in range(len(self.adjacency_matrix)):
+                    if self.adjacency_matrix[i][j] == '':
+                        self.adjacency_matrix[i][j] = self.adjacency_matrix[i + iterator][j - iterator + 1]
+                        iterator += 1
+            # for i in range(len(self.adjacency_matrix)):
+            #     print(type(self.adjacency_matrix[i]))
+
+    def get_adjacency(self, address):
+        for i in range(len(self.indices)):
+            if address == self.indices[i]:
+                return self.adjacency_matrix[i]
+
+    def get_address_index(self, address): return self.indices.index(address)
+
+    def get_next_closest(self, address):
+        index = self.get_address_index(address)
+        adjacency = self.adjacency_matrix[index]
+        # next_closest_location_index = [float(num) for float(num) in adjacency if float(num) > 0]
+        min = float(adjacency[0])
+        min_index = None
+        for i in range(len(adjacency)):
+            if 0 < float(adjacency[i]) < min:
+                min = float(adjacency[i])
+                min_index = i
+        return self.indices[min_index]
 
 
-create_adjacency_matrix()
-# package_list = create_package_list()
+# def next_closest():
+am = AdjacencyMatrix()
+package_list = create_package_list()
+# adjacency_matrix.h.display()
+# print(am.get_address_index(package_list.get(package_list.get(1).address)))
+print(am.get_address_index('195 W Oakland Ave'))
+# print(type(package_list.get(1).address))
+# print(am.indices)
+print(package_list.get(1).address)
+print(am.get_adjacency('195 W Oakland Ave'))
+print(am.get_next_closest('195 W Oakland Ave'))
 # package_list.display()
 # package = package_list.get(3)
 # display_package(package)
+
+for i in range(1, 41, 1):
+    if am.get_address_index(package_list.get(i).address) is None:
+        print(f'No address found for Package {i}: {package_list.get(i).address}')
+
+
