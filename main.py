@@ -1,3 +1,5 @@
+import re
+
 import csv
 
 
@@ -52,7 +54,7 @@ class HashMap:
 
 
 class Package:
-    def __init__(self, package_id=None, address=None, city=None, state=None, zip=None, deadline=None, weight=None, notes=None):
+    def __init__(self, package_id, address, city, state, zip, deadline, weight, notes):
         self.package_id = int(package_id)
         self.address = address
         self.city = city
@@ -63,10 +65,9 @@ class Package:
         self.notes = notes
         self.status = "At Hub"
 
-
-def display_package(package):
-
-
+    def display(self):
+        print(f'{self.package_id}, {self.address}, {self.city}, {self.state}, {self.zip}, '
+              f'{self.deadline}, {self.weight}, {self.notes}, {self.status}')
 
 
 def create_package_list():
@@ -74,15 +75,38 @@ def create_package_list():
     with open('csv/WGUPS_Package_File.csv') as package_file:
         csv_reader = csv.reader(package_file)
         for line in csv_reader:
-            h.add(line[0], Package(line[0], line[1], line[2], line[3], line[4], line[5], line[6], line[7]))
+            notes = line[7]
+            if notes == '':
+                notes = None
+            h.add(line[0], Package(line[0], line[1], line[2], line[3], line[4], line[5], line[6], notes))
     return h
 
 
 def create_adjacency_matrix():
-    print("TODO")
+    with open('csv/WGUPS_Distance_Table.csv') as distance_file:
+        csv_reader = csv.reader(distance_file)
+        adjacency_matrix = [line for line in csv_reader]
+        indices = [None] * len(adjacency_matrix)
+
+        for i in range(len(adjacency_matrix)):
+            # Puts address in the correct format and moves to indices list.
+            # This list will look up index by address and vice versa
+            row = adjacency_matrix[i]
+            address = str(row.pop(0))
+            new_address = address.split('\n', 1)[-1].split(',', 1)[0].strip()
+            indices[i] = new_address
+
+            iterator = 1
+            for j in range(len(adjacency_matrix)):
+                if adjacency_matrix[i][j] == '':
+                    adjacency_matrix[i][j] = adjacency_matrix[i + iterator][j - iterator]
+                    iterator += 1
+        for i in range(len(adjacency_matrix)):
+            print(adjacency_matrix[i])
 
 
-package_list = create_package_list()
-package_list.display()
-package = package_list.get(8)
-print(package.city)
+create_adjacency_matrix()
+# package_list = create_package_list()
+# package_list.display()
+# package = package_list.get(3)
+# display_package(package)
