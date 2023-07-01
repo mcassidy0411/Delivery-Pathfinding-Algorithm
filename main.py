@@ -127,8 +127,8 @@ class Truck:
         self.truck_number = truck_number
         self.count = 0
         self.mileage = 0.0
-        # self.time = time.strptime(departure_time, '%H:%M:%S')
-        self.time = datetime.datetime.now().replace(hour=8, minute=0, second=0, microsecond=0)
+        hours, minutes = departure_time.split(":")
+        self.time = datetime.datetime.now().replace(hour=int(hours), minute=int(minutes), second=0, microsecond=0)
 
     def add(self, package, distance_to_next):
         if self.count < len(self.delivery_list):
@@ -151,15 +151,13 @@ class Truck:
             seconds = (miles/18) * 3600
             self.mileage += miles
             self.time = self.time + datetime.timedelta(seconds=seconds)
-            print(f'miles: {self.mileage} time: {self.time}')
+            print(f'miles: {self.mileage} time: {self.get_time_string()}')
+
             self.delivery_list.pop(self.count)
             return True
         return False
 
-    def get_time_string(self):
-        return time.strftime('%H:%M:%S', time.strptime(self.time, '%H:%M:%S'))
-
-
+    def get_time_string(self): return self.time.strftime('%H:%M:%S')
 
 
 def create_package_list():
@@ -197,7 +195,7 @@ package_list = create_package_list()
 # package_list.display()
 # package = package_list.get(3)
 # display_package(package)
-truck1 = Truck(1, '08:00:00')
+truck1 = Truck(1, '08:00')
 hub = '4001 South 700 East'
 package1 = package_list.get(1)
 adjacency1 = am.get_adjacency_between(hub, package1.address)
