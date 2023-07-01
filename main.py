@@ -1,4 +1,6 @@
+import datetime
 import csv
+import time
 
 
 class HashMap:
@@ -69,18 +71,6 @@ class Package:
               f'{self.deadline}, {self.weight}, {self.notes}, {self.status}')
 
 
-def create_package_list():
-    h = HashMap()
-    with open('csv/WGUPS_Package_File.csv') as package_file:
-        csv_reader = csv.reader(package_file)
-        for line in csv_reader:
-            notes = line[7]
-            if notes == '':
-                notes = None
-            h.add(int(line[0]), Package(line[0], line[1], line[2], line[3], line[4], line[5], line[6], notes))
-    return h
-
-
 class AdjacencyMatrix:
     def __init__(self):
         with open('csv/WGUPS_Distance_Table.csv') as distance_file:
@@ -104,10 +94,17 @@ class AdjacencyMatrix:
             # for i in range(len(self.adjacency_matrix)):
             #     print(type(self.adjacency_matrix[i]))
 
-    def get_adjacency(self, address):
+    def get_adjacency_list(self, address):
         for i in range(len(self.indices)):
             if address == self.indices[i]:
                 return self.adjacency_matrix[i]
+
+    def get_adjacency_between(self, point_a, point_b):
+        list = self.get_adjacency_list(point_a)
+        index = self.get_address_index(point_b)
+        print(index)
+        print(f'Point A: {point_a}\nPoint B: {point_b}\nDistance: {list[index]}')
+        return list[index]
 
     def get_address_index(self, address): return self.indices.index(address)
 
@@ -125,27 +122,68 @@ class AdjacencyMatrix:
 
 
 class Truck:
-    def __init__(self, truck_number):
-        self.package_list = [None] * 16
+    def __init__(self, truck_number, departure_time):
+        self.delivery_list = [[None, None] for _ in range(16)]
         self.truck_number = truck_number
         self.count = 0
+        self.mileage = 0.0
+        # self.time = time.strptime(departure_time, '%H:%M:%S')
+        self.time = datetime.datetime.now().replace(hour=8, minute=0, second=0, microsecond=0)
 
-    def add(self, package):
-        if self.count < len(self.package_list):
+    def add(self, package, distance_to_next):
+        if self.count < len(self.delivery_list):
             package.status = f'On Truck {self.truck_number} for delivery'
-            self.package_list[self.count] = package
+            row = self.delivery_list[self.count]
+            row[0] = float(distance_to_next)
+            row[1] = package
             self.count += 1
+            print("Package added to Truck")
             return True
         return False
 
     def deliver(self):
-        if self.package_list[self.count] is not None:
-            self.package_list.pop(self.count)
+        # TODO fix this
+        if self.delivery_list[self.count] is not None:
+            row = self.delivery_list[0]
+            print(row)
+            miles = row[0]
+            print(f'miles {miles}')
+            seconds = (miles/18) * 3600
+            self.mileage += miles
+            self.time = self.time + datetime.timedelta(seconds=seconds)
+            print(f'miles: {self.mileage} time: {self.time}')
+            self.delivery_list.pop(self.count)
             return True
         return False
 
+    def get_time_string(self):
+        return time.strftime('%H:%M:%S', time.strptime(self.time, '%H:%M:%S'))
 
-# def next_closest():
+
+
+
+def create_package_list():
+    h = HashMap()
+    with open('csv/WGUPS_Package_File.csv') as package_file:
+        csv_reader = csv.reader(package_file)
+        for line in csv_reader:
+            notes = line[7]
+            if notes == '':
+                notes = None
+            h.add(int(line[0]), Package(line[0], line[1], line[2], line[3], line[4], line[5], line[6], notes))
+    return h
+
+
+def time_tracker():
+    time_object = time.localtime()
+    print(time_object)
+    local_time = time.strftime("%H:%M:%S", time_object)
+    print(local_time)
+    start_time = time.strftime('%H:%M:%S', time.strptime('08:00:00', '%H:%M:%S'))  # keep this
+    print(start_time)
+
+
+time_tracker()
 am = AdjacencyMatrix()
 package_list = create_package_list()
 # adjacency_matrix.h.display()
@@ -159,8 +197,14 @@ package_list = create_package_list()
 # package_list.display()
 # package = package_list.get(3)
 # display_package(package)
-truck1 = Truck(1)
-truck1.add(package_list.get(1))
+truck1 = Truck(1, '08:00:00')
+hub = '4001 South 700 East'
+package1 = package_list.get(1)
+adjacency1 = am.get_adjacency_between(hub, package1.address)
+# package2_address = am.get_next_closest(package_list.get(1).address)
+# print(f'next: {package2_address}')
+truck1.add(package1, adjacency1)
 truck1.deliver()
+package_list.get(1).status = "Delivered"
 package_list.get(1).display()
 
