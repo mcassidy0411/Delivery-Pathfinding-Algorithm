@@ -1,5 +1,3 @@
-import re
-
 import csv
 
 
@@ -126,23 +124,43 @@ class AdjacencyMatrix:
         return self.indices[min_index]
 
 
+class Truck:
+    def __init__(self, truck_number):
+        self.package_list = [None] * 16
+        self.truck_number = truck_number
+        self.count = 0
+
+    def add(self, package):
+        if self.count < len(self.package_list):
+            package.status = f'On Truck {self.truck_number} for delivery'
+            self.package_list[self.count] = package
+            self.count += 1
+            return True
+        return False
+
+    def deliver(self):
+        if self.package_list[self.count] is not None:
+            self.package_list.pop(self.count)
+            return True
+        return False
+
+
 # def next_closest():
 am = AdjacencyMatrix()
 package_list = create_package_list()
 # adjacency_matrix.h.display()
 # print(am.get_address_index(package_list.get(package_list.get(1).address)))
-print(am.get_address_index('195 W Oakland Ave'))
+# print(am.get_address_index('195 W Oakland Ave'))
 # print(type(package_list.get(1).address))
 # print(am.indices)
-print(package_list.get(1).address)
-print(am.get_adjacency('195 W Oakland Ave'))
-print(am.get_next_closest('195 W Oakland Ave'))
+# print(package_list.get(1).address)
+# print(am.get_adjacency('195 W Oakland Ave'))
+# print(am.get_next_closest('195 W Oakland Ave'))
 # package_list.display()
 # package = package_list.get(3)
 # display_package(package)
-
-for i in range(1, 41, 1):
-    if am.get_address_index(package_list.get(i).address) is None:
-        print(f'No address found for Package {i}: {package_list.get(i).address}')
-
+truck1 = Truck(1)
+truck1.add(package_list.get(1))
+truck1.deliver()
+package_list.get(1).display()
 
