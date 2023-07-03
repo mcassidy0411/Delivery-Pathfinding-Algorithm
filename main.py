@@ -137,6 +137,8 @@ class Truck:
         if self.count < len(self.delivery_list):
             package.status = f'On Truck {self.truck_number} for delivery'
             self.delivery_list[self.count] = package
+            print(package)
+            print(self.delivery_list[self.count])
             self.count += 1
             return True
         return False
@@ -153,7 +155,10 @@ class Truck:
                 if distance < min:
                     min = distance
                     current_package = self.delivery_list[j]
-            self.delivery_list.pop(0)
+            seconds = (float(min)/18) * 3600
+            self.time += seconds
+            self.mileage += min
+            current_package.status = f'Delivered at'
 
     def get_time_string(self):
         return self.time.strftime('%H:%M:%S')
@@ -197,5 +202,5 @@ for i in truck1_packages:
     truck1.add(package_list.get(i))
 
 truck1.deliver()
-package_list.get(1).status = "Delivered"
-package_list.get(1).display()
+# package_list.get(1).status = "Delivered"
+package_list.get(14).display()
