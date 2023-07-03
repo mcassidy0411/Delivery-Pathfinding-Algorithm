@@ -103,7 +103,7 @@ class AdjacencyMatrix:
         index = self.get_address_index(point_b)
         # print(index)
         # print(f'Point A: {point_a}\nPoint B: {point_b}\nDistance: {list[index]}')
-        return list[index]
+        return float(list[index])
 
     def get_address_index(self, address):
         return self.indices.index(address)
@@ -137,28 +137,32 @@ class Truck:
         if self.count < len(self.delivery_list):
             package.status = f'On Truck {self.truck_number} for delivery'
             self.delivery_list[self.count] = package
-            print(package)
-            print(self.delivery_list[self.count])
             self.count += 1
             return True
         return False
 
     def deliver(self):
-        for i in range(self.count):
+        while self.count > 0:
             current_package = self.delivery_list[0]
-            if self.current_location == self.hub:
-                min = self.distance_table.get_distance_between(self.current_location, self.delivery_list[0].address)
-            else:
-                min = 0
+            shortest_distance = self.distance_table.get_distance_between(self.current_location, self.delivery_list[0].address)
             for j in range(self.count):
                 distance = self.distance_table.get_distance_between(self.current_location, self.delivery_list[j].address)
-                if distance < min:
-                    min = distance
+                if distance <= shortest_distance:
+                    shortest_distance = distance
                     current_package = self.delivery_list[j]
-            seconds = (float(min)/18) * 3600
-            self.time += seconds
-            self.mileage += min
-            current_package.status = f'Delivered at'
+            print(f'Traveling {shortest_distance} miles from {self.current_location} to {current_package.address}')
+            self.current_location = current_package.address
+            hours = shortest_distance / 18
+            self.time += datetime.timedelta(hours=hours)
+            self.mileage += shortest_distance
+            print(f'Current mileage: {self.mileage} Current time: {self.time}')
+            current_package.status = f'Delivered at {self.time}'
+            self.delivery_list.pop(self.delivery_list.index(current_package))
+            self.count -= 1
+        distance_to_hub = self.distance_table.get_distance_between(self.current_location, self.hub)
+        hours = distance_to_hub / 18
+        self.time += datetime.timedelta(hours=hours)
+        self.mileage += distance_to_hub
 
     def get_time_string(self):
         return self.time.strftime('%H:%M:%S')
@@ -197,10 +201,13 @@ truck1 = Truck(1, '08:00')
 # print(f'next: {package2_address}')
 
 # Load Truck 1
-truck1_packages = [1, 13, 14, 15, 16, 19, 20, 29, 30, 31, 34, 40]
+truck1_packages = [1, 4, 7, 13, 14, 15, 16, 19, 20, 21, 27, 29, 34, 35, 39, 40]
+# truck1_packages = [15, 16, 34]
 for i in truck1_packages:
     truck1.add(package_list.get(i))
 
 truck1.deliver()
-# package_list.get(1).status = "Delivered"
-package_list.get(14).display()
+print(truck1.time)
+print(truck1.mileage)
+for i in truck1_packages:
+    package_list.get(i).display()
