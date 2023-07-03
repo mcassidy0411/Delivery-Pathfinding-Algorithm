@@ -1,6 +1,5 @@
 import datetime
 import csv
-import time
 
 
 class HashMap:
@@ -99,14 +98,15 @@ class AdjacencyMatrix:
             if address == self.indices[i]:
                 return self.adjacency_matrix[i]
 
-    def get_adjacency_between(self, point_a, point_b):
+    def get_distance_between(self, point_a, point_b):
         list = self.get_adjacency_list(point_a)
         index = self.get_address_index(point_b)
-        print(index)
-        print(f'Point A: {point_a}\nPoint B: {point_b}\nDistance: {list[index]}')
+        # print(index)
+        # print(f'Point A: {point_a}\nPoint B: {point_b}\nDistance: {list[index]}')
         return list[index]
 
-    def get_address_index(self, address): return self.indices.index(address)
+    def get_address_index(self, address):
+        return self.indices.index(address)
 
     def get_next_closest(self, address):
         index = self.get_address_index(address)
@@ -123,41 +123,40 @@ class AdjacencyMatrix:
 
 class Truck:
     def __init__(self, truck_number, departure_time):
-        self.delivery_list = [[None, None] for _ in range(16)]
+        self.delivery_list = [None] * 16
         self.truck_number = truck_number
         self.count = 0
         self.mileage = 0.0
+        self.hub = '4001 South 700 East'
+        self.current_location = self.hub
         hours, minutes = departure_time.split(":")
         self.time = datetime.datetime.now().replace(hour=int(hours), minute=int(minutes), second=0, microsecond=0)
+        self.distance_table = AdjacencyMatrix()
 
-    def add(self, package, distance_to_next):
+    def add(self, package):
         if self.count < len(self.delivery_list):
             package.status = f'On Truck {self.truck_number} for delivery'
-            row = self.delivery_list[self.count]
-            row[0] = float(distance_to_next)
-            row[1] = package
+            self.delivery_list[self.count] = package
             self.count += 1
-            print("Package added to Truck")
             return True
         return False
 
     def deliver(self):
-        # TODO fix this
-        if self.delivery_list[self.count] is not None:
-            row = self.delivery_list[0]
-            print(row)
-            miles = row[0]
-            print(f'miles {miles}')
-            seconds = (miles/18) * 3600
-            self.mileage += miles
-            self.time = self.time + datetime.timedelta(seconds=seconds)
-            print(f'miles: {self.mileage} time: {self.get_time_string()}')
+        for i in range(self.count):
+            current_package = self.delivery_list[0]
+            if self.current_location == self.hub:
+                min = self.distance_table.get_distance_between(self.current_location, self.delivery_list[0].address)
+            else:
+                min = 0
+            for j in range(self.count):
+                distance = self.distance_table.get_distance_between(self.current_location, self.delivery_list[j].address)
+                if distance < min:
+                    min = distance
+                    current_package = self.delivery_list[j]
+            self.delivery_list.pop(0)
 
-            self.delivery_list.pop(self.count)
-            return True
-        return False
-
-    def get_time_string(self): return self.time.strftime('%H:%M:%S')
+    def get_time_string(self):
+        return self.time.strftime('%H:%M:%S')
 
 
 def create_package_list():
@@ -172,16 +171,6 @@ def create_package_list():
     return h
 
 
-def time_tracker():
-    time_object = time.localtime()
-    print(time_object)
-    local_time = time.strftime("%H:%M:%S", time_object)
-    print(local_time)
-    start_time = time.strftime('%H:%M:%S', time.strptime('08:00:00', '%H:%M:%S'))  # keep this
-    print(start_time)
-
-
-time_tracker()
 am = AdjacencyMatrix()
 package_list = create_package_list()
 # adjacency_matrix.h.display()
@@ -196,13 +185,17 @@ package_list = create_package_list()
 # package = package_list.get(3)
 # display_package(package)
 truck1 = Truck(1, '08:00')
-hub = '4001 South 700 East'
-package1 = package_list.get(1)
-adjacency1 = am.get_adjacency_between(hub, package1.address)
+# hub = '4001 South 700 East'
+# package1 = package_list.get(1)
+# adjacency1 = am.get_adjacency_between(hub, package1.address)
 # package2_address = am.get_next_closest(package_list.get(1).address)
 # print(f'next: {package2_address}')
-truck1.add(package1, adjacency1)
+
+# Load Truck 1
+truck1_packages = [1, 13, 14, 15, 16, 19, 20, 29, 30, 31, 34, 40]
+for i in truck1_packages:
+    truck1.add(package_list.get(i))
+
 truck1.deliver()
 package_list.get(1).status = "Delivered"
 package_list.get(1).display()
-
