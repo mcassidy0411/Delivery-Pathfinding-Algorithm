@@ -163,9 +163,11 @@ class Truck:
         hours = distance_to_hub / 18
         self.time += datetime.timedelta(hours=hours)
         self.mileage += distance_to_hub
+        self.delivery_list = [None] * 16
 
-    def get_time_string(self):
-        return self.time.strftime('%H:%M:%S')
+
+
+    def get_time_string(self): return self.time.strftime('%H:%M:%S')
 
 
 def create_package_list():
@@ -193,21 +195,54 @@ package_list = create_package_list()
 # package_list.display()
 # package = package_list.get(3)
 # display_package(package)
-truck1 = Truck(1, '08:00')
 # hub = '4001 South 700 East'
 # package1 = package_list.get(1)
 # adjacency1 = am.get_adjacency_between(hub, package1.address)
 # package2_address = am.get_next_closest(package_list.get(1).address)
 # print(f'next: {package2_address}')
 
+truck1 = Truck(1, '08:00')
+truck2 = Truck(2, '08:00')
 # Load Truck 1
 truck1_packages = [1, 4, 7, 13, 14, 15, 16, 19, 20, 21, 27, 29, 34, 35, 39, 40]
-# truck1_packages = [15, 16, 34]
+
+truck2_packages = [2, 3, 5, 8, 10, 11, 17, 18, 22, 23, 24, 30, 33, 36, 37, 38]
+
 for i in truck1_packages:
     truck1.add(package_list.get(i))
 
+for i in truck2_packages:
+    truck2.add(package_list.get(i))
+
 truck1.deliver()
+truck2.deliver()
+
+truck1_packages = [6, 25, 26, 31, 32]
+truck2_packages = [9, 12, 28]
+
+for i in truck1_packages:
+    truck1.add(package_list.get(i))
+
+package9 = package_list.get(9)
+package9.address = '410 S State St'
+package9.city = 'Salt Lake City'
+package9.state = 'UT'
+package9.zip = '84111'
+
+for i in truck2_packages:
+    truck2.add(package_list.get(i))
+
+truck1.deliver()
+truck2.time = datetime.datetime.now().replace(hour=10, minute=20, second=0, microsecond=0)
+truck2.deliver()
+
 print(truck1.time)
 print(truck1.mileage)
-for i in truck1_packages:
+print(truck2.time)
+print(truck2.mileage)
+
+# for i in truck1_packages:
+#     package_list.get(i).display()
+
+for i in truck2_packages:
     package_list.get(i).display()
