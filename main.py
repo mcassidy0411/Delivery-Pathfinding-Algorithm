@@ -190,7 +190,7 @@ truck2 = Truck(2, '08:00')
 # truck1_packages = [1, 4, 7, 13, 14, 15, 16, 19, 20, 21, 27, 29, 34, 35, 39, 40]
 truck1_packages = [1, 2, 4, 13, 14, 15, 16, 19, 20, 21, 27, 33, 34, 35, 39, 40]
 
-truck2_packages = [2, 3, 5, 7, 8, 10, 11, 17, 18, 22, 23, 24, 29, 30, 33, 36, 37, 38]
+truck2_packages = [3, 5, 7, 8, 10, 11, 17, 18, 22, 23, 24, 29, 30, 36, 37, 38]
 
 for i in truck1_packages:
     truck1.add(package_list.get(i))
@@ -231,4 +231,4 @@ print(truck2.mileage)
 # for i in truck2_packages:
 #     package_list.get(i).display()
 
-package_list.display()
+# package_list.display()
