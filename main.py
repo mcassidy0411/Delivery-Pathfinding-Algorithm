@@ -77,6 +77,8 @@ class AdjacencyMatrix:
             self.adjacency_matrix = [line for line in csv_reader]
             self.indices = [None, None] * len(self.adjacency_matrix)
 
+
+
             for i in range(len(self.adjacency_matrix)):
                 # Puts address in the correct format and moves to indices list.
                 # This list will look up index by address and vice versa
@@ -101,24 +103,10 @@ class AdjacencyMatrix:
     def get_distance_between(self, point_a, point_b):
         list = self.get_adjacency_list(point_a)
         index = self.get_address_index(point_b)
-        # print(index)
-        # print(f'Point A: {point_a}\nPoint B: {point_b}\nDistance: {list[index]}')
         return float(list[index])
 
     def get_address_index(self, address):
         return self.indices.index(address)
-
-    def get_next_closest(self, address):
-        index = self.get_address_index(address)
-        adjacency = self.adjacency_matrix[index]
-        # next_closest_location_index = [float(num) for float(num) in adjacency if float(num) > 0]
-        min = float(adjacency[0])
-        min_index = None
-        for i in range(len(adjacency)):
-            if 0 < float(adjacency[i]) < min:
-                min = float(adjacency[i])
-                min_index = i
-        return self.indices[min_index]
 
 
 class Truck:
@@ -129,9 +117,12 @@ class Truck:
         self.mileage = 0.0
         self.hub = '4001 South 700 East'
         self.current_location = self.hub
-        hours, minutes = departure_time.split(":")
-        self.time = datetime.datetime.now().replace(hour=int(hours), minute=int(minutes), second=0, microsecond=0)
+        self.time = self.parse_time_string(departure_time)
         self.distance_table = AdjacencyMatrix()
+
+    def parse_time_string(self, time):
+        hours, minutes = time.split(":")
+        return datetime.datetime.now().replace(hour=int(hours), minute=int(minutes), second=0, microsecond=0)
 
     def add(self, package):
         if self.count < len(self.delivery_list):
@@ -150,22 +141,24 @@ class Truck:
                 if distance <= shortest_distance:
                     shortest_distance = distance
                     current_package = self.delivery_list[j]
-            print(f'Traveling {shortest_distance} miles from {self.current_location} to {current_package.address}')
+            print(f'Truck {self.truck_number} Traveling {shortest_distance} miles from {self.current_location} to {current_package.address}\nCurrent Mileage: {self.mileage}')
             self.current_location = current_package.address
-            hours = shortest_distance / 18
-            self.time += datetime.timedelta(hours=hours)
-            self.mileage += shortest_distance
-            print(f'Current mileage: {self.mileage} Current time: {self.time}')
+            self.set_time_and_mileage(shortest_distance)
+            # print(f'Current mileage: {self.mileage} Current time: {self.time}')
             current_package.status = f'Delivered at {self.time}'
             self.delivery_list.pop(self.delivery_list.index(current_package))
             self.count -= 1
-        distance_to_hub = self.distance_table.get_distance_between(self.current_location, self.hub)
-        hours = distance_to_hub / 18
+        self.return_to_hub()
+
+    def set_time_and_mileage(self, distance):
+        hours = distance / 18
         self.time += datetime.timedelta(hours=hours)
-        self.mileage += distance_to_hub
+        self.mileage += distance
+
+    def return_to_hub(self):
+        distance_to_hub = self.distance_table.get_distance_between(self.current_location, self.hub)
+        self.set_time_and_mileage(distance_to_hub)
         self.delivery_list = [None] * 16
-
-
 
     def get_time_string(self): return self.time.strftime('%H:%M:%S')
 
@@ -181,17 +174,6 @@ def create_package_list():
             h.add(int(line[0]), Package(line[0], line[1], line[2], line[3], line[4], line[5], line[6], notes))
     return h
 
-
-test_map = HashMap()
-test_map.add([0, 'address', 'business name'],  [0, 1, 2, 3, 4])
-test_map.display()
-# for i in truck1_packages:
-#     package_list.get(i).display()
-#
-# for i in truck2_packages:
-#     package_list.get(i).display()
-
-# package_list.display()
 
 prompt = 'What would you like to do?\n1. Begin delivery simulation\n2. Lookup Package\n3. Quit\n>> '
 # user_input = int(input(prompt))
