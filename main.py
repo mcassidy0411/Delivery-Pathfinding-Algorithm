@@ -75,7 +75,7 @@ class AdjacencyMatrix:
         with open('csv/WGUPS_Distance_Table.csv') as distance_file:
             csv_reader = csv.reader(distance_file)
             self.adjacency_matrix = [line for line in csv_reader]
-            self.indices = [None] * len(self.adjacency_matrix)
+            self.indices = [None, None] * len(self.adjacency_matrix)
 
             for i in range(len(self.adjacency_matrix)):
                 # Puts address in the correct format and moves to indices list.
@@ -182,48 +182,9 @@ def create_package_list():
     return h
 
 
-package_list = create_package_list()
-
-truck1 = Truck(1, '08:00')
-truck2 = Truck(2, '08:00')
-# Load Truck 1
-truck1_packages = [1, 2, 4, 13, 14, 15, 16, 19, 20, 21, 27, 33, 34, 35, 39, 40]
-
-truck2_packages = [3, 5, 7, 8, 10, 11, 17, 18, 22, 23, 24, 29, 30, 36, 37, 38]
-
-for i in truck1_packages:
-    truck1.add(package_list.get(i))
-
-for i in truck2_packages:
-    truck2.add(package_list.get(i))
-
-truck1.deliver()
-truck2.deliver()
-
-truck1_packages = [6, 25, 26, 31, 32]
-truck2_packages = [9, 12, 28]
-
-for i in truck1_packages:
-    truck1.add(package_list.get(i))
-
-package9 = package_list.get(9)
-package9.address = '410 S State St'
-package9.city = 'Salt Lake City'
-package9.state = 'UT'
-package9.zip = '84111'
-
-for i in truck2_packages:
-    truck2.add(package_list.get(i))
-
-truck1.deliver()
-truck2.time = datetime.datetime.now().replace(hour=10, minute=20, second=0, microsecond=0)
-truck2.deliver()
-
-print(truck1.time)
-print(truck1.mileage)
-print(truck2.time)
-print(truck2.mileage)
-
+test_map = HashMap()
+test_map.add([0, 'address', 'business name'],  [0, 1, 2, 3, 4])
+test_map.display()
 # for i in truck1_packages:
 #     package_list.get(i).display()
 #
@@ -231,3 +192,58 @@ print(truck2.mileage)
 #     package_list.get(i).display()
 
 # package_list.display()
+
+prompt = 'What would you like to do?\n1. Begin delivery simulation\n2. Lookup Package\n3. Quit\n>> '
+# user_input = int(input(prompt))
+user_input = 1
+while True:
+    if user_input == 1:
+        package_list = create_package_list()
+
+        truck1 = Truck(1, '08:00')
+        truck2 = Truck(2, '08:00')
+        # Load Truck 1
+        truck1_packages = [1, 2, 4, 13, 14, 15, 16, 19, 20, 21, 27, 33, 34, 35, 39, 40]
+
+        truck2_packages = [3, 5, 7, 8, 10, 11, 17, 18, 22, 23, 24, 29, 30, 36, 37, 38]
+
+        for i in truck1_packages:
+            truck1.add(package_list.get(i))
+
+        for i in truck2_packages:
+            truck2.add(package_list.get(i))
+
+        truck1.deliver()
+        truck2.deliver()
+
+        truck1_packages = [6, 25, 26, 31, 32]
+        truck2_packages = [9, 12, 28]
+
+        for i in truck1_packages:
+            truck1.add(package_list.get(i))
+
+        package9 = package_list.get(9)
+        package9.address = '410 S State St'
+        package9.city = 'Salt Lake City'
+        package9.state = 'UT'
+        package9.zip = '84111'
+
+        for i in truck2_packages:
+            truck2.add(package_list.get(i))
+
+        truck1.deliver()
+        truck2.time = datetime.datetime.now().replace(hour=10, minute=20, second=0, microsecond=0)
+        truck2.deliver()
+
+        print(truck1.time)
+        print(truck1.mileage)
+        print(truck2.time)
+        print(truck2.mileage)
+    elif user_input == 2:
+        print('Lookup')
+    elif user_input == 3:
+        print('Quitting')
+        break
+    else:
+        print('Invalid input; please try again')
+    user_input = int(input(prompt))
