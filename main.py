@@ -141,10 +141,10 @@ class Truck:
                     if distance <= shortest_distance:
                         shortest_distance = distance
                         current_package = self.delivery_list[j]
-                print(f'Truck {self.truck_number} Traveling {shortest_distance} miles from {self.current_location} to {current_package.address}\nCurrent Mileage: {self.mileage}')
+                # print(f'Truck {self.truck_number} Traveling {shortest_distance} miles from {self.current_location} to {current_package.address}\nCurrent Mileage: {self.mileage}')
                 self.current_location = current_package.address
                 self.status = f'En Route to {self.current_location} at {self.master_time}'
-                print(self.status)
+                # print(self.status)
                 next_delivery_time = self.calculate_time(shortest_distance)
                 if self.stop_time is not None and self.stop_time < next_delivery_time:
                     print(f'master time: {self.master_time}, next time would be {next_delivery_time}')
@@ -155,10 +155,17 @@ class Truck:
                 current_package.status = f'Delivered at {self.master_time}'
                 self.delivery_list.pop(self.delivery_list.index(current_package))
                 self.count -= 1
-            if self.count == 0:
-                self.status = f'Returning to Hub at {self.master_time}'
+            if self.count == 0 and self.stop_time is not None:
+                distance_to_hub = self.distance_table.get_distance_between(self.current_location, self.hub)
+                if self.stop_time < self.calculate_time(distance_to_hub):
+                    self.status = f'Returning to Hub at {self.master_time}'
+                    break
+                else:
+                    self.return_to_hub()
+            else:
                 self.return_to_hub()
             break
+
 
     def calculate_time(self, distance):
         hours = distance / 18
@@ -201,8 +208,8 @@ while True:
     if user_input == 1:
         package_list = create_package_list()
 
-        truck1 = Truck(1, '08:00', '09:47')
-        truck2 = Truck(2, '08:00')
+        truck1 = Truck(1, '08:00', '09:49')
+        truck2 = Truck(2, '08:00', '09:49')
 
         # Load Trucks
         truck1_packages = [1, 2, 4, 13, 14, 15, 16, 19, 20, 21, 27, 33, 34, 35, 39, 40]
