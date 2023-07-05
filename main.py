@@ -63,7 +63,7 @@ class Package:
         self.deadline = deadline
         self.weight = weight
         self.notes = notes
-        self.status = "At Hub"
+        self.status = None
 
     def display(self):
         print(f'{self.package_id}, {self.address}, {self.city}, {self.state}, {self.zip}, '
@@ -102,57 +102,84 @@ class AdjacencyMatrix:
 
 
 class Truck:
-    def __init__(self, truck_number, departure_time):
+    def __init__(self, truck_number, departure_time, stop_time=None):
         self.delivery_list = [None] * 16
         self.truck_number = truck_number
         self.count = 0
         self.mileage = 0.0
         self.hub = '4001 South 700 East'
         self.current_location = self.hub
-        self.time = self.parse_time_string(departure_time)
+        self.master_time = self.parse_time_string(departure_time)
         self.distance_table = AdjacencyMatrix()
+        self.trip_number = 0
+        self.stop_time = self.parse_time_string(stop_time)
+        self.status = 'At Hub'
 
     def parse_time_string(self, time):
-        hours, minutes = time.split(":")
-        return datetime.datetime.now().replace(hour=int(hours), minute=int(minutes), second=0, microsecond=0)
+        try:
+            hours, minutes = time.split(":")
+            return datetime.datetime.now().replace(hour=int(hours), minute=int(minutes), second=0, microsecond=0)
+        except AttributeError:
+            return None
 
     def add(self, package):
         if self.count < len(self.delivery_list):
             package.status = f'On Truck {self.truck_number} for delivery'
             self.delivery_list[self.count] = package
             self.count += 1
+            self.trip_number += 1
             return True
         return False
 
     def deliver(self):
-        while self.count > 0:
-            current_package = self.delivery_list[0]
-            shortest_distance = self.distance_table.get_distance_between(self.current_location, self.delivery_list[0].address)
-            for j in range(self.count):
-                distance = self.distance_table.get_distance_between(self.current_location, self.delivery_list[j].address)
-                if distance <= shortest_distance:
-                    shortest_distance = distance
-                    current_package = self.delivery_list[j]
-            print(f'Truck {self.truck_number} Traveling {shortest_distance} miles from {self.current_location} to {current_package.address}\nCurrent Mileage: {self.mileage}')
-            self.current_location = current_package.address
-            self.set_time_and_mileage(shortest_distance)
-            # print(f'Current mileage: {self.mileage} Current time: {self.time}')
-            current_package.status = f'Delivered at {self.time}'
-            self.delivery_list.pop(self.delivery_list.index(current_package))
-            self.count -= 1
-        self.return_to_hub()
+        while True:
+            while self.count > 0:
+                current_package = self.delivery_list[0]
+                shortest_distance = self.distance_table.get_distance_between(self.current_location, self.delivery_list[0].address)
+                for j in range(self.count):
+                    distance = self.distance_table.get_distance_between(self.current_location, self.delivery_list[j].address)
+                    if distance <= shortest_distance:
+                        shortest_distance = distance
+                        current_package = self.delivery_list[j]
+                print(f'Truck {self.truck_number} Traveling {shortest_distance} miles from {self.current_location} to {current_package.address}\nCurrent Mileage: {self.mileage}')
+                self.current_location = current_package.address
+                self.status = f'En Route to {self.current_location} at {self.master_time}'
+                print(self.status)
+                next_delivery_time = self.calculate_time(shortest_distance)
+                if self.stop_time is not None and self.stop_time < next_delivery_time:
+                    print(f'master time: {self.master_time}, next time would be {next_delivery_time}')
+                    break
+                self.set_time(shortest_distance)
+                self.set_mileage(shortest_distance)
+                # print(f'Current mileage: {self.mileage} Current time: {self.time}')
+                current_package.status = f'Delivered at {self.master_time}'
+                self.delivery_list.pop(self.delivery_list.index(current_package))
+                self.count -= 1
+            if self.count == 0:
+                self.status = f'Returning to Hub at {self.master_time}'
+                self.return_to_hub()
+            break
 
-    def set_time_and_mileage(self, distance):
+    def calculate_time(self, distance):
         hours = distance / 18
-        self.time += datetime.timedelta(hours=hours)
-        self.mileage += distance
+        current_time = self.master_time
+        current_time += datetime.timedelta(hours=hours)
+        return current_time
+
+    def set_time(self, distance):
+        hours = distance / 18
+        self.master_time += datetime.timedelta(hours=hours)
+
+    def set_mileage(self, distance): self.mileage += distance
 
     def return_to_hub(self):
         distance_to_hub = self.distance_table.get_distance_between(self.current_location, self.hub)
-        self.set_time_and_mileage(distance_to_hub)
+        self.set_time(distance_to_hub)
+        self.set_mileage(distance_to_hub)
         self.delivery_list = [None] * 16
+        self.status = f'Returned to Hub at {self.master_time}'
 
-    def get_time_string(self): return self.time.strftime('%H:%M:%S')
+    def get_time_string(self): return self.master_time.strftime('%H:%M:%S')
 
 
 def create_package_list():
@@ -174,11 +201,11 @@ while True:
     if user_input == 1:
         package_list = create_package_list()
 
-        truck1 = Truck(1, '08:00')
+        truck1 = Truck(1, '08:00', '09:47')
         truck2 = Truck(2, '08:00')
-        # Load Truck 1
-        truck1_packages = [1, 2, 4, 13, 14, 15, 16, 19, 20, 21, 27, 33, 34, 35, 39, 40]
 
+        # Load Trucks
+        truck1_packages = [1, 2, 4, 13, 14, 15, 16, 19, 20, 21, 27, 33, 34, 35, 39, 40]
         truck2_packages = [3, 5, 7, 8, 10, 11, 17, 18, 22, 23, 24, 29, 30, 36, 37, 38]
 
         for i in truck1_packages:
@@ -190,29 +217,31 @@ while True:
         truck1.deliver()
         truck2.deliver()
 
-        truck1_packages = [6, 25, 26, 31, 32]
-        truck2_packages = [9, 12, 28]
+        # truck1_packages = [6, 25, 26, 31, 32]
+        # truck2_packages = [9, 12, 28]
+        #
+        # for i in truck1_packages:
+        #     truck1.add(package_list.get(i))
+        #
+        # package9 = package_list.get(9)
+        # package9.address = '410 S State St'
+        # package9.city = 'Salt Lake City'
+        # package9.state = 'UT'
+        # package9.zip = '84111'
+        #
+        # for i in truck2_packages:
+        #     truck2.add(package_list.get(i))
+        #
+        # truck1.deliver()
+        # truck2.master_time = datetime.datetime.now().replace(hour=10, minute=20, second=0, microsecond=0)
+        # truck2.deliver()
 
-        for i in truck1_packages:
-            truck1.add(package_list.get(i))
-
-        package9 = package_list.get(9)
-        package9.address = '410 S State St'
-        package9.city = 'Salt Lake City'
-        package9.state = 'UT'
-        package9.zip = '84111'
-
-        for i in truck2_packages:
-            truck2.add(package_list.get(i))
-
-        truck1.deliver()
-        truck2.time = datetime.datetime.now().replace(hour=10, minute=20, second=0, microsecond=0)
-        truck2.deliver()
-
-        print(truck1.time)
+        print(truck1.master_time)
         print(truck1.mileage)
-        print(truck2.time)
+        print(truck1.status)
+        print(truck2.master_time)
         print(truck2.mileage)
+        print(truck2.status)
     elif user_input == 2:
         print('Lookup')
     elif user_input == 3:
