@@ -182,31 +182,15 @@ def create_package_list():
     return h
 
 
-am = AdjacencyMatrix()
 package_list = create_package_list()
-# adjacency_matrix.h.display()
-# print(am.get_address_index(package_list.get(package_list.get(1).address)))
-# print(am.get_address_index('195 W Oakland Ave'))
-# print(type(package_list.get(1).address))
-# print(am.indices)
-# print(package_list.get(1).address)
-# print(am.get_adjacency('195 W Oakland Ave'))
-# print(am.get_next_closest('195 W Oakland Ave'))
-# package_list.display()
-# package = package_list.get(3)
-# display_package(package)
-# hub = '4001 South 700 East'
-# package1 = package_list.get(1)
-# adjacency1 = am.get_adjacency_between(hub, package1.address)
-# package2_address = am.get_next_closest(package_list.get(1).address)
-# print(f'next: {package2_address}')
 
 truck1 = Truck(1, '08:00')
 truck2 = Truck(2, '08:00')
 # Load Truck 1
-truck1_packages = [1, 4, 7, 13, 14, 15, 16, 19, 20, 21, 27, 29, 34, 35, 39, 40]
+# truck1_packages = [1, 4, 7, 13, 14, 15, 16, 19, 20, 21, 27, 29, 34, 35, 39, 40]
+truck1_packages = [1, 2, 4, 13, 14, 15, 16, 19, 20, 21, 27, 33, 34, 35, 39, 40]
 
-truck2_packages = [2, 3, 5, 8, 10, 11, 17, 18, 22, 23, 24, 30, 33, 36, 37, 38]
+truck2_packages = [2, 3, 5, 7, 8, 10, 11, 17, 18, 22, 23, 24, 29, 30, 33, 36, 37, 38]
 
 for i in truck1_packages:
     truck1.add(package_list.get(i))
@@ -243,6 +227,8 @@ print(truck2.mileage)
 
 # for i in truck1_packages:
 #     package_list.get(i).display()
+#
+# for i in truck2_packages:
+#     package_list.get(i).display()
 
-for i in truck2_packages:
-    package_list.get(i).display()
+package_list.display()
