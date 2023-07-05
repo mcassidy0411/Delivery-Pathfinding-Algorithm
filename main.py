@@ -72,12 +72,11 @@ class Package:
 
 class AdjacencyMatrix:
     def __init__(self):
+        self.address_dict = {}
+        self.adjacency_dict = {}
         with open('csv/WGUPS_Distance_Table.csv') as distance_file:
             csv_reader = csv.reader(distance_file)
             self.adjacency_matrix = [line for line in csv_reader]
-            self.indices = [None, None] * len(self.adjacency_matrix)
-
-
 
             for i in range(len(self.adjacency_matrix)):
                 # Puts address in the correct format and moves to indices list.
@@ -85,28 +84,21 @@ class AdjacencyMatrix:
                 row = self.adjacency_matrix[i]
                 address = str(row.pop(0))
                 new_address = address.split('\n', 1)[-1].split(',', 1)[0].strip()
-                self.indices[i] = new_address
 
                 iterator = 1
                 for j in range(len(self.adjacency_matrix)):
-                    if self.adjacency_matrix[i][j] == '':
-                        self.adjacency_matrix[i][j] = self.adjacency_matrix[i + iterator][j - iterator + 1]
+                    if row[j] == '':
+                        row[j] = self.adjacency_matrix[i + iterator][j - iterator + 1]
                         iterator += 1
-            # for i in range(len(self.adjacency_matrix)):
-            #     print(type(self.adjacency_matrix[i]))
-
-    def get_adjacency_list(self, address):
-        for i in range(len(self.indices)):
-            if address == self.indices[i]:
-                return self.adjacency_matrix[i]
+                    row[j] = float(row[j])
+                self.address_dict[new_address] = i
+                self.adjacency_dict[i] = row
 
     def get_distance_between(self, point_a, point_b):
-        list = self.get_adjacency_list(point_a)
-        index = self.get_address_index(point_b)
-        return float(list[index])
-
-    def get_address_index(self, address):
-        return self.indices.index(address)
+        point_a_index = self.address_dict[point_a]
+        point_b_index = self.address_dict[point_b]
+        adjacency_list = self.adjacency_dict[point_a_index]
+        return float(adjacency_list[point_b_index])
 
 
 class Truck:
