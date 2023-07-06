@@ -284,16 +284,16 @@ prompt = 'What would you like to do?\n1. Begin delivery simulation\n2. Lookup Pa
 user_input = int(input(prompt))
 # user_input = 1
 while True:
-    package_list = create_package_list()
+    package_hash_table = create_package_list()
     if user_input == 1:
-        deliver_packages(package_list)
+        deliver_packages(package_hash_table)
     elif user_input == 2:
         while True:
             lookup_time_prompt = 'Enter a time in 24 hour format ("HH:MM") to check the status of deliveries: ' \
                                  '(For example, "13:00" for 1PM)\n>> '
             try:
                 lookup_time = input(lookup_time_prompt)
-                deliver_packages(package_list, lookup_time)
+                deliver_packages(package_hash_table, lookup_time)
             except ValueError:
                 print('Please enter a valid time')
                 continue
@@ -314,6 +314,14 @@ while True:
 
                 return_to_main_menu = False
 
+                lookup_prompt = input(f'Please enter the {lookup_prompt_list.get(lookup_selection)}\n>> ')
+                lookup_value = input(lookup_prompt)
+                lookup_field = lookup_prompt_list.get(lookup_selection)
+
+                package_list = []
+                for i in range(1, package_hash_table.number_of_items):
+                    package_list.append(i)
+
                 if lookup_prompt_list.get(lookup_selection) is None:
                     print('Please make a valid selection')
                     continue
@@ -323,14 +331,6 @@ while True:
                     return_to_main_menu = True
                     break
 
-                lookup_prompt = input(f'Please enter the {lookup_prompt_list.get(lookup_selection)}\n>> ')
-                lookup_value = input(lookup_prompt)
-                lookup_field = lookup_prompt_list.get(lookup_selection)
-
-                for i in range(1, package_list.number_of_items):
-                    row = package_list.get(i)
-                    if lookup_value in row[0]:
-                        package_list.get(i).display()
                 break
 
             if return_to_main_menu:
