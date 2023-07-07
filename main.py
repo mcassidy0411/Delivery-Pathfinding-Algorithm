@@ -310,17 +310,47 @@ while True:
                 lookup_prompt_list = {2: 'Package ID', 3: 'Address', 4: 'City', 5: 'Zip Code', 6: 'Package Weight',
                                       7: 'Delivery Deadline', 8: 'Status'}
 
-                selection_to_package_column = {2: 0, 3: 1, 4: 2, 5: 4, 6: 6, 7: 5, 8: 8}
-
                 return_to_main_menu = False
 
-                lookup_prompt = input(f'Please enter the {lookup_prompt_list.get(lookup_selection)}\n>> ')
-                lookup_value = input(lookup_prompt)
+                lookup_value = input(f'Please enter the {lookup_prompt_list.get(lookup_selection)}:\n>> ')
                 lookup_field = lookup_prompt_list.get(lookup_selection)
 
                 package_list = []
+                filtered_list = []
                 for i in range(1, package_hash_table.number_of_items):
-                    package_list.append(i)
+                    package_list.append(package_hash_table.get(i))
+
+                for package in package_list:
+                    current_package = package
+                    if lookup_selection == 1:
+                        lookup_value = None
+                        filtered_list = package_list
+                        break
+                    elif lookup_selection == 2:
+                        if current_package.package_id == int(lookup_value):
+                            filtered_list.append(current_package)
+                            break
+                    elif lookup_selection == 3:
+                        if current_package.address == lookup_value:
+                            filtered_list.append(current_package)
+                    elif lookup_selection == 4:
+                        if current_package.city == lookup_value:
+                            filtered_list.append(current_package)
+                    elif lookup_selection == 5:
+                        if current_package.zip == lookup_value:
+                            filtered_list.append(current_package)
+                    elif lookup_selection == 6:
+                        if current_package.weight == lookup_value:
+                            filtered_list.append(current_package)
+                    elif lookup_selection == 7:
+                        if current_package.deadline == lookup_value:
+                            filtered_list.append(current_package)
+                    elif lookup_selection == 8:
+                        if current_package.city == lookup_value:
+                            filtered_list.append(current_package)
+
+                for package in filtered_list:
+                    package.display()
 
                 if lookup_prompt_list.get(lookup_selection) is None:
                     print('Please make a valid selection')
@@ -335,18 +365,6 @@ while True:
 
             if return_to_main_menu:
                 break
-
-        # self.package_id = int(package_id)
-        # self.address = address
-        # self.city = city
-        # self.state = state
-        # self.zip = zip
-        # self.deadline = deadline
-        # self.weight = weight
-        # self.notes = notes
-        # self.status = status
-
-
 
     elif user_input == 3:
         print('Quitting')
