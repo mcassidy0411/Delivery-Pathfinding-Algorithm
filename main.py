@@ -1,5 +1,7 @@
 import datetime
 import csv
+from abc import ABC, abstractmethod
+from TextColor import TextColor
 
 
 class HashMap:
@@ -53,42 +55,6 @@ class HashMap:
                 print(str(item))
 
 
-class Package:
-    def __init__(self, package_id, address, city, state, zip, deadline, weight, notes, status):
-        self.package_id = int(package_id)
-        self.address = address
-        self.city = city
-        self.state = state
-        self.zip = zip
-        self.deadline = deadline
-        self.weight = weight
-        self.notes = notes
-        self.status = status
-
-    def display(self):
-        print(f'{self.package_id}, {self.address}, {self.city}, {self.state}, {self.zip}, '
-              f'{self.deadline}, {self.weight}, {self.notes}, {self.status}')
-
-    def contains_value(self, value, ):
-        search_fields = [self.address,
-                         self.city,
-                         self.state,
-                         self.zip,
-                         self.deadline,
-                         self.weight,
-                         self.notes,
-                         self.status]
-
-        if isinstance(value, str):
-            for field in search_fields:
-                if value.lower() in str(field).lower():
-                    return True
-        elif isinstance(value, int):
-            if self.package_id == value:
-                return True
-        return False
-
-
 class AdjacencyMatrix:
     def __init__(self):
         self.address_dict = {}
@@ -120,6 +86,23 @@ class AdjacencyMatrix:
         return float(adjacency_list[point_b_index])
 
 
+class Package:
+    def __init__(self, package_id, address, city, state, zip_code, deadline, weight, notes, status):
+        self.package_id = int(package_id)
+        self.address = address
+        self.city = city
+        self.state = state
+        self.zip_code = zip_code
+        self.deadline = deadline
+        self.weight = weight
+        self.notes = notes
+        self.status = status
+
+    def get_data(self):
+        return [self.package_id, self.address, self.city, self.state, self.zip_code, self.deadline, self.weight,
+                self.status]
+
+
 class Truck:
     def __init__(self, truck_number, departure_time, stop_time=None):
         self.delivery_list = [None] * 16
@@ -133,6 +116,7 @@ class Truck:
         self.trip_number = 1
         self.stop_time = stop_time
         self.status = 'At Hub'
+        self.delivered_package_list = []
 
     def add(self, package):
         if self.count < len(self.delivery_list):
@@ -144,8 +128,10 @@ class Truck:
 
     def deliver(self):
         while True:
-            print(f'Truck {self.truck_number}, Trip {self.trip_number} Delivering Packages:\n')
+            if self.stop_time is None:
+                print(f'\nTruck {self.truck_number}, Trip {self.trip_number} Delivering Packages:\n')
             while self.count > 0:
+
                 current_package = self.delivery_list[0]
                 shortest_distance = self.distance_table.get_distance_between(self.current_location,
                                                                              self.delivery_list[0].address)
@@ -155,21 +141,24 @@ class Truck:
                     if distance <= shortest_distance:
                         shortest_distance = distance
                         current_package = self.delivery_list[j]
-                # print(f'Truck {self.truck_number} Traveling {shortest_distance} miles from {self.current_location} to {current_package.address}\nCurrent Mileage: {self.mileage}')
+
                 self.current_location = current_package.address
                 self.status = f'En Route to {self.current_location} at {self.master_time}'
-                # print(self.status)
                 next_delivery_time = self.calculate_time(shortest_distance)
+
                 if self.stop_time is not None and self.stop_time < next_delivery_time:
-                    # print(f'Truck {self.truck_number} master time: {self.master_time}, next time would be {next_delivery_time}')
                     break
+
                 self.set_time(shortest_distance)
                 self.set_mileage(shortest_distance)
-                # print(f'Current mileage: {self.mileage} Current time: {self.time}')
                 current_package.status = f'Delivered at {self.master_time}'
-                self.print_delivery(current_package)
+
+                if self.stop_time is None:
+                    self.delivered_package_list.append(current_package)
+
                 self.delivery_list.pop(self.delivery_list.index(current_package))
                 self.count -= 1
+
             if self.count == 0 and self.stop_time is not None:
                 distance_to_hub = self.distance_table.get_distance_between(self.current_location, self.hub)
                 if self.stop_time < self.calculate_time(distance_to_hub):
@@ -179,6 +168,7 @@ class Truck:
                     self.return_to_hub()
             else:
                 self.return_to_hub()
+
             break
 
     def calculate_time(self, distance):
@@ -202,6 +192,8 @@ class Truck:
         self.count = 0
         self.trip_number += 1
         self.status = f'Returned to Hub at {self.master_time}'
+        display_package_list(self.delivered_package_list)
+        self.delivered_package_list = []
 
     def print_delivery(self, current_package):
         data = [{'package_id': current_package.package_id, 'address': current_package.address,
@@ -238,7 +230,34 @@ def parse_time_string(time):
         return None
 
 
+def display_package_list(list):
+    if len(list) > 0:
+        extracted_attribute_list = []
+
+        for package in list:
+            extracted_attribute_list.append(package.get_data())
+
+        headers = ["Package ID", "Address", "City", "State", "Zip Code", "Deadline", "Weight", "Status"]
+
+        # Determine the maximum width for each column
+        column_widths = [max(len(str(row[i])) for row in extracted_attribute_list + [headers]) for i in range(len(headers))]
+
+        # Print the headers
+        header_line = " | ".join("{:{}}".format(header, column_widths[i]) for i, header in enumerate(headers))
+        print(TextColor.magenta + header_line)
+        print("-" * len(header_line) + TextColor.reset)
+
+        # Print the data rows
+        for row in extracted_attribute_list:
+            data_line = " | ".join("{:{}}".format(str(value), column_widths[i]) for i, value in enumerate(row))
+            print(data_line)
+
+
 def deliver_packages(package_list, stop_time=None):
+    def load_truck(truck, packages):
+        for i in packages:
+            truck.add(package_list.get(i))
+
     stop_time = parse_time_string(stop_time)
 
     truck1 = Truck(1, '08:00', stop_time)
@@ -248,93 +267,127 @@ def deliver_packages(package_list, stop_time=None):
     truck1_packages = [1, 2, 4, 13, 14, 15, 16, 19, 20, 21, 27, 33, 34, 35, 39, 40]
     truck2_packages = [3, 5, 7, 8, 10, 11, 17, 18, 22, 23, 24, 29, 30, 36, 37, 38]
 
-    for i in truck1_packages:
-        truck1.add(package_list.get(i))
-
-    for i in truck2_packages:
-        truck2.add(package_list.get(i))
+    load_truck(truck1, truck1_packages)
+    load_truck(truck2, truck2_packages)
 
     truck1.deliver()
+    display_package_list(truck1.delivered_package_list)
     truck2.deliver()
+    display_package_list(truck2.delivered_package_list)
 
-    truck1_packages = [6, 25, 26, 31, 32]
-    truck2_packages = [9, 12, 28]
+    if stop_time is None or stop_time >= datetime.datetime.now().replace(hour=9, minute=5, second=0, microsecond=0):
+        delayed_packages = [6, 25, 28, 32]
+        for i in delayed_packages:
+            package_list.get(i).status = 'At Hub'
 
-    for i in truck1_packages:
-        truck1.add(package_list.get(i))
-
-    if stop_time is None or stop_time > datetime.datetime.now().replace(hour=10, minute=20, second=0, microsecond=0):
+    if stop_time is None or stop_time >= datetime.datetime.now().replace(hour=10, minute=20, second=0, microsecond=0):
         package9 = package_list.get(9)
         package9.address = '410 S State St'
         package9.city = 'Salt Lake City'
         package9.state = 'UT'
-        package9.zip = '84111'
+        package9.zip_code = '84111'
         package9.notes = 'Address Corrected'
         package9.status = 'At Hub'
 
-    for i in truck2_packages:
-        truck2.add(package_list.get(i))
+    if stop_time is None or (stop_time is not None and truck1.master_time < stop_time):
+        truck1_packages = [6, 25, 26, 31, 32]
+        load_truck(truck1, truck1_packages)
+        truck1.deliver()
+        display_package_list(truck1.delivered_package_list)
 
-    truck1.deliver()
-    truck2.master_time = datetime.datetime.now().replace(hour=10, minute=20, second=0, microsecond=0)
-    truck2.deliver()
+    if stop_time is None or (stop_time is not None and truck2.master_time < stop_time):
+        truck2_packages = [9, 12, 28]
+        load_truck(truck2, truck2_packages)
+        # If Truck 2 returns to the Hub prior to 10:20, hold Truck 2 until Package 9's corrected address is received at
+        # 10:20.  Begin next trip at 10:20
+        if truck2.master_time < datetime.datetime.now().replace(hour=10, minute=20, second=0, microsecond=0):
+            truck2.master_time = datetime.datetime.now().replace(hour=10, minute=20, second=0, microsecond=0)
+        truck2.deliver()
+        display_package_list(truck2.delivered_package_list)
 
 
-prompt = 'What would you like to do?\n1. Begin delivery simulation\n2. Lookup Package\n3. Quit\n>> '
-user_input = int(input(prompt))
-# user_input = 1
 while True:
     package_hash_table = create_package_list()
+
+    prompt = TextColor.blue + '\nWhat would you like to do?\n' + TextColor.reset + \
+                                        '\n1. Begin delivery simulation' \
+                                        '\n2. Lookup Package' \
+                                        '\n3. Quit\n\n>> '
+    try:
+        user_input = int(input(prompt))
+    except ValueError:
+        print('Please enter a valid option')
+        continue
     if user_input == 1:
         deliver_packages(package_hash_table)
     elif user_input == 2:
+
         while True:
-            lookup_time_prompt = 'Enter a time in 24 hour format ("HH:MM") to check the status of deliveries: ' \
-                                 '(For example, "13:00" for 1PM)\n>> '
+            lookup_time_prompt = TextColor.blue + '\nEnter a time in 24 hour format ("HH:MM") to check the ' \
+                                                        'status of deliveries: (For example, "13:15" for 1:15 PM)\n' \
+                                                        + TextColor.reset + '\n>> '
             try:
                 lookup_time = input(lookup_time_prompt)
                 deliver_packages(package_hash_table, lookup_time)
             except ValueError:
                 print('Please enter a valid time')
                 continue
+
             while True:
-                lookup_filter_prompt = 'What would you like to look up?\n1. All Packages\n2. Package ID\n' \
-                                       '3. Address\n4. City\n5. Zip Code\n6. Package Weight\n7. Delivery Deadline\n' \
-                                       '8. Status\n9. Back to Main Menu\n>> '
+                lookup_prompt_dict = {1: 'All Packages',
+                                      2: 'Package ID',
+                                      3: 'Address',
+                                      4: 'City',
+                                      5: 'Zip Code',
+                                      6: 'Package Weight',
+                                      7: 'Delivery Deadline',
+                                      8: 'Status',
+                                      9: 'Back to Main Menu'}
+
+                lookup_filter_prompt = TextColor.blue + '\nWhat would you like to look up?\n\n' \
+                                        + TextColor.reset
+                for key, value in lookup_prompt_dict.items():
+                    lookup_filter_prompt += f'{str(key)}. {value}\n'
+                lookup_filter_prompt += '\n>> '
+
                 try:
                     lookup_selection = int(input(lookup_filter_prompt))
                 except ValueError:
-                    print('Invalid input; please try again')
+                    print('Please enter a valid option')
                     continue
 
-                lookup_prompt_list = {2: 'Package ID', 3: 'Address', 4: 'City', 5: 'Zip Code', 6: 'Package Weight',
-                                      7: 'Delivery Deadline', 8: 'Status'}
-
                 return_to_main_menu = False
-
-                lookup_value = input(f'Please enter the {lookup_prompt_list.get(lookup_selection)}:\n>> ')
-                lookup_field = lookup_prompt_list.get(lookup_selection)
+                if lookup_prompt_dict.get(lookup_selection) is None:
+                    print('Please make a valid selection')
+                    continue
+                elif 2 <= lookup_selection <= 8:
+                    lookup_value = input(TextColor.blue +
+                                         f'\nPlease enter the {lookup_prompt_dict.get(lookup_selection)}:\n'
+                                         + TextColor.reset + '\n>> ').lower()
+                elif lookup_selection == 9:
+                    return_to_main_menu = True
+                    break
 
                 package_list = []
                 filtered_list = []
-                for i in range(1, package_hash_table.number_of_items):
+                for i in range(1, package_hash_table.number_of_items + 1):
                     package_list.append(package_hash_table.get(i))
 
                 for package in package_list:
                     current_package = package
                     if lookup_selection == 1:
                         lookup_value = None
-                        filtered_list = package_list
+                        filtered_list[:] = package_list
                         break
                     elif lookup_selection == 2:
                         if current_package.package_id == int(lookup_value):
                             filtered_list.append(current_package)
                             break
                     elif lookup_selection == 3:
-                        if current_package.address == lookup_value:
+                        if current_package.address.lower() == lookup_value:
                             filtered_list.append(current_package)
                     elif lookup_selection == 4:
-                        if current_package.city == lookup_value:
+                        if current_package.city.lower() == lookup_value:
                             filtered_list.append(current_package)
                     elif lookup_selection == 5:
                         if current_package.zip == lookup_value:
@@ -349,19 +402,7 @@ while True:
                         if current_package.city == lookup_value:
                             filtered_list.append(current_package)
 
-                for package in filtered_list:
-                    package.display()
-
-                if lookup_prompt_list.get(lookup_selection) is None:
-                    print('Please make a valid selection')
-                    continue
-                elif lookup_selection == 1:
-                    lookup_value = None
-                elif lookup_selection == 9:
-                    return_to_main_menu = True
-                    break
-
-                break
+                display_package_list(filtered_list)
 
             if return_to_main_menu:
                 break
@@ -370,5 +411,4 @@ while True:
         print('Quitting')
         break
     else:
-        print('Invalid input; please try again')
-    user_input = int(input(prompt))
+        print('Please enter a valid option')
