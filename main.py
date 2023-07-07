@@ -120,6 +120,8 @@ class Truck:
         self.delivered_package_list = []
 
     def add(self, package):
+        if self.count == 0:
+            self.delivered_package_list = []
         if self.count < len(self.delivery_list):
             package.status = f'On Truck {self.truck_number} for delivery'
             self.delivery_list[self.count] = package
@@ -176,7 +178,6 @@ class Truck:
         self.count = 0
         self.trip_number += 1
         self.status = f'Returned to Hub at {self.master_time}'
-        self.delivered_package_list = []
 
     def print_delivery(self, current_package):
         data = [{'package_id': current_package.package_id, 'address': current_package.address,
@@ -278,7 +279,7 @@ def deliver_packages(package_list, stop_time=None):
     deliver(truck1)
     deliver(truck2)
 
-    if stop_time is not None:
+    if stop_time is None:
         display_package_list(truck1.delivered_package_list)
         display_package_list(truck2.delivered_package_list)
 
@@ -303,14 +304,13 @@ def deliver_packages(package_list, stop_time=None):
     load_truck(truck1, truck1_packages)
     deliver(truck1)
 
-
     truck2_packages = [9, 12, 28]
     load_truck(truck2, truck2_packages)
     if truck2.master_time < datetime.datetime.now().replace(hour=10, minute=20, second=0, microsecond=0):
         truck2.master_time = datetime.datetime.now().replace(hour=10, minute=20, second=0, microsecond=0)
     deliver(truck2)
 
-    if stop_time is not None:
+    if stop_time is None:
         display_package_list(truck1.delivered_package_list)
         display_package_list(truck2.delivered_package_list)
 
