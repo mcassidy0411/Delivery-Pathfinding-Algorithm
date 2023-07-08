@@ -25,7 +25,7 @@ class Truck:
             self.delivered_package_list = []
             self.next_departure_time = self.master_time
         if self.count < len(self.delivery_list):
-            package.status = f'On Truck {self.truck_number} for delivery'
+            # package.status = f'On Truck {self.truck_number} for delivery'
             self.delivery_list[self.count] = package
             self.count += 1
             return True
