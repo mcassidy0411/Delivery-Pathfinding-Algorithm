@@ -4,11 +4,16 @@
 import copy
 import datetime
 import time
+
+import TimeUtils
+# import TimeUtils
 import csv
 from TextColor import TextColor
 from HashMap import HashMap
 from Package import Package
 from Truck import Truck
+from TimeUtils import parse_time_string
+from AdjacencyMatrix import AdjacencyMatrix
 
 
 def create_package_list():
@@ -83,26 +88,7 @@ def run_delivery_simulation(package_list, stop_time=None):
             display_package_list(truck.delivered_package_list)
             print(f'\nTruck {truck.truck_number} returned to the Hub at {truck.master_time}')
 
-
-
-
-
-    lookup_prompt_hashmap = HashMap()
-
-    lookup_prompt_list = [[1, 'All Packages'], [2, 'Package ID'], [3, 'Address'], [4, 'City'],
-                          [5, 'Zip Code'], [6, 'Package Weight'], [7, 'Delivery Deadline'], [8, 'Status'],
-                          9, 'Back to Main Menu']
-
-    for i in range(len(lookup_prompt_list) - 1):
-        row = lookup_prompt_list[i]
-        lookup_prompt_hashmap.add(row[0], row[1])
-
-    lookup_prompt_hashmap.display()
-
-
-
-
-    stop_time = Truck.parse_time_string(stop_time)
+    stop_time = TimeUtils.parse_time_string(stop_time)
     original_package_list = []
 
     for i in range(1, package_list.number_of_items + 1):
@@ -147,8 +133,9 @@ def run_delivery_simulation(package_list, stop_time=None):
 
     truck2_packages = [9, 12, 28]
     load_truck(truck2, truck2_packages)
-    if truck2.master_time < datetime.datetime.now().replace(hour=10, minute=20, second=0, microsecond=0):
-        truck2.master_time = datetime.datetime.now().replace(hour=10, minute=20, second=0, microsecond=0)
+    if truck2.master_time < TimeUtils.parse_time_string('10:20'):
+        print('\nTruck 2 Holding until 10:20 for correct address on Package 9')
+        truck2.master_time = TimeUtils.parse_time_string('10:20')
         truck2.next_departure_time = truck2.master_time
     deliver(truck2)
 
@@ -157,8 +144,15 @@ def run_delivery_simulation(package_list, stop_time=None):
 
     unique_entries = []
     if stop_time is None:
-        print(f'Truck 1 total mileage: {truck1.mileage}')
-        print(f'Truck 2 total mileage: {truck2.mileage}')
+        truck1_total_time = truck1.master_time - TimeUtils.parse_time_string("08:00")
+        truck2_total_time = truck2.master_time - TimeUtils.parse_time_string("08:00")
+
+        print('\nSummary\n-----------------------------------------')
+        print(f'Truck 1 total mileage: {round(truck1.mileage, 2)}\nTruck 1 total time: {truck1_total_time}')
+        print(f'Truck 2 total mileage: {round(truck2.mileage, 2)}\nTruck 2 total time: {truck2_total_time}')
+        print(f'Total Mileage Travelled by all Trucks: {round(truck1.mileage + truck2.mileage)}')
+        print(f'Total Delivery Time for all Trucks: {truck1_total_time + truck2_total_time}')
+        print('-----------------------------------------')
     elif stop_time is not None:
         seen_keys = set()
         for entry in reversed(original_package_list):
@@ -198,41 +192,40 @@ while True:
                 lookup_time = input(lookup_time_prompt)
                 package_list = run_delivery_simulation(package_hash_table, lookup_time)
             except ValueError:
-                print(TextColor.red + 'Please enter a valid time' + TextColor.reset)
+                print(TextColor.red + '\nPlease enter a valid time' + TextColor.reset)
                 continue
 
             while True:
-                lookup_prompt_hashmap = HashMap()
-
                 lookup_prompt_list = [[1, 'All Packages'], [2, 'Package ID'], [3, 'Address'], [4, 'City'],
                                       [5, 'Zip Code'], [6, 'Package Weight'], [7, 'Delivery Deadline'], [8, 'Status'],
-                                      9, 'Back to Main Menu']
+                                      [9, 'Back to Main Menu']]
 
-                for row in lookup_prompt_list:
+                lookup_prompt_hashmap = HashMap()
+                for i in range(len(lookup_prompt_list)):
+                    row = lookup_prompt_list[i]
                     lookup_prompt_hashmap.add(row[0], row[1])
 
-                lookup_prompt_hashmap.display()
-
-                lookup_filter_prompt = TextColor.blue + '\nWhat would you like to look up?\n\n' \
+                lookup_filter_prompt = TextColor.blue + '\nWhat would you like to look up?\n' \
                                         + TextColor.reset
-                for key, value in lookup_prompt_dict.items():
-                    lookup_filter_prompt += f'{str(key)}. {value}\n'
-                lookup_filter_prompt += '\n>> '
+
+                print(lookup_filter_prompt)
+                for i in range(1, lookup_prompt_hashmap.number_of_items):
+                    print(f'{i}. {lookup_prompt_hashmap.get(i)}')
 
                 try:
-                    lookup_selection = int(input(lookup_filter_prompt))
+                    lookup_selection = int(input('\n>> '))
                 except ValueError:
                     print(TextColor.red + 'Please enter a valid option' + TextColor.reset)
                     continue
 
                 lookup_value = None
                 return_to_main_menu = False
-                if lookup_prompt_dict.get(lookup_selection) is None:
+                if lookup_prompt_hashmap.get(lookup_selection) is None:
                     print(TextColor.red + 'Please make a valid selection' + TextColor.reset)
                     continue
                 elif 2 <= lookup_selection <= 7:
                     lookup_value = input(TextColor.blue +
-                                         f'\nPlease enter the {lookup_prompt_dict.get(lookup_selection)}:\n'
+                                         f'\nPlease enter the {lookup_prompt_hashmap.get(lookup_selection)}:\n'
                                          + TextColor.reset + '\n>> ').lower()
                 elif lookup_selection == 8:
                     while True:

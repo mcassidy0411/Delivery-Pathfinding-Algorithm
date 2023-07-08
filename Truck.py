@@ -45,7 +45,6 @@ class Truck:
 
             self.current_location = current_package.address
             self.status = f'En Route to {self.current_location} at {self.master_time}'
-
             self.set_time(shortest_distance)
             self.set_mileage(shortest_distance)
             current_package.status = f'Delivered'
@@ -81,7 +80,7 @@ class Truck:
         self.trip_number += 1
         self.status = f'Returned to Hub at {self.master_time}'
 
-    def parse_time_string(time):
+    def parse_time_string(self, time):
         try:
             hours, minutes = time.split(":")
             return datetime.datetime.now().replace(hour=int(hours), minute=int(minutes), second=0, microsecond=0)

@@ -28,7 +28,7 @@ class AdjacencyMatrix:
 
         distance_list = self.distance_hashmap.get(point_x_index)
         if distance_list[point_y_index] == '':
-            distance_list[:] = self.distance_hashmap.get(point_y_index)
+            distance_list = self.distance_hashmap.get(point_y_index)
             return float(distance_list[point_x_index])
         else:
             return float(distance_list[point_y_index])
