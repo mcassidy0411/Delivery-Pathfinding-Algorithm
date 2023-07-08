@@ -1,6 +1,5 @@
 # Michael Cassidy, 009986687
 
-
 class HashMap:
     def __init__(self):
         self.size = 8

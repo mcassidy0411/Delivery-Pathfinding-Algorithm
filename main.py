@@ -1,10 +1,7 @@
 # Michael Cassidy, 009986687
 
-
 import copy
-import datetime
 import time
-
 import PackageHandler
 import TimeUtils
 from TextColor import TextColor
@@ -107,12 +104,12 @@ class Main:
             truck1_total_time = truck1.master_time - TimeUtils.parse_time_string("08:00")
             truck2_total_time = truck2.master_time - TimeUtils.parse_time_string("08:00")
 
-            print(TextColor.bright_green + '\nSummary\n-------------------------------------------' + TextColor.reset)
+            print(TextColor.bright_green + '\nSummary\n--------------------------------------------' + TextColor.reset)
             print(f'Truck 1 total mileage: {round(truck1.mileage, 2)}\nTruck 1 total time: {truck1_total_time}')
             print(f'Truck 2 total mileage: {round(truck2.mileage, 2)}\nTruck 2 total time: {truck2_total_time}')
             print(f'Total Mileage Travelled by all Trucks: {round(truck1.mileage + truck2.mileage)}')
             print(f'Total Delivery Time for all Trucks: {truck1_total_time + truck2_total_time}')
-            print(TextColor.bright_green + '-------------------------------------------' + TextColor.reset)
+            print(TextColor.bright_green + '--------------------------------------------' + TextColor.reset)
         else:
             seen_keys = set()
             for entry in reversed(original_package_list):

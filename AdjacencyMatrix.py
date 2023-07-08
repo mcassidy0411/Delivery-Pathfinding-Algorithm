@@ -1,6 +1,5 @@
 # Michael Cassidy, 009986687
 
-
 import csv
 from HashMap import HashMap
 

@@ -1,6 +1,5 @@
 # Michael Cassidy, 009986687
 
-
 import datetime
 
 
@@ -18,5 +17,5 @@ class Package:
         self.last_modified = datetime.datetime.now().replace(hour=8, minute=0, second=0, microsecond=0)
 
     def get_data(self):
-        return [self.status, self.last_modified, self.package_id, self.address, self.city, self.state, self.zip_code, self.deadline, self.weight]
-
+        return [self.status, self.last_modified, self.package_id, self.address, self.city, self.state, self.zip_code,
+                self.deadline, self.weight]
