@@ -1,59 +1,13 @@
+# Michael Cassidy, 009986687
+
+
 import copy
 import datetime
+import time
+
 import csv
-from abc import ABC, abstractmethod
 from TextColor import TextColor
-
-
-class HashMap:
-    def __init__(self):
-        self.size = 8
-        self.map = [None] * self.size
-        self.number_of_items = 0
-
-    def get_hash(self, key):
-        hash = 0
-        for char in str(key):
-            hash += ord(char)
-        return hash % self.size
-
-    def add(self, key, value):
-        key_hash = self.get_hash(key)
-        key_value = [key, value]
-        self.number_of_items += 1
-        if self.map[key_hash] is None:
-            self.map[key_hash] = list([key_value])
-            return True
-        else:
-            for item in self.map[key_hash]:
-                if item[0] == key:
-                    item[1] = value
-                    return True
-            self.map[key_hash].append(key_value)
-            return True
-
-    def get(self, key):
-        key_hash = self.get_hash(key)
-        if self.map[key_hash] is not None:
-            for item in self.map[key_hash]:
-                if item[0] == key:
-                    return item[1]
-        return None
-
-    def delete(self, key):
-        key_hash = self.get_hash(key)
-
-        if self.map[key_hash] is None:
-            return False
-        for i in range(0, len(self.map[key_hash])):
-            if self.map[key_hash][i][0] == key:
-                self.map[key_hash].pop(i)
-                return True
-
-    def display(self):
-        for item in self.map:
-            if item is not None:
-                print(str(item))
+from HashMap import HashMap
 
 
 class AdjacencyMatrix:
@@ -105,23 +59,24 @@ class Package:
 
 
 class Truck:
-    def __init__(self, truck_number, departure_time, stop_time=None):
+    def __init__(self, truck_number, departure_time):
         self.delivery_list = [None] * 16
         self.truck_number = truck_number
         self.count = 0
         self.mileage = 0.0
         self.hub = '4001 South 700 East'
         self.current_location = self.hub
-        self.master_time = parse_time_string(departure_time)
+        self.next_departure_time = parse_time_string(departure_time)
+        self.master_time = self.next_departure_time
         self.distance_table = AdjacencyMatrix()
-        self.trip_number = 1
-        self.stop_time = stop_time
+        self.trip_number = 0
         self.status = 'At Hub'
         self.delivered_package_list = []
 
     def add(self, package):
         if self.count == 0:
             self.delivered_package_list = []
+            self.next_departure_time = self.master_time
         if self.count < len(self.delivery_list):
             package.status = f'On Truck {self.truck_number} for delivery'
             self.delivery_list[self.count] = package
@@ -178,13 +133,6 @@ class Truck:
         self.count = 0
         self.trip_number += 1
         self.status = f'Returned to Hub at {self.master_time}'
-
-    def print_delivery(self, current_package):
-        data = [{'package_id': current_package.package_id, 'address': current_package.address,
-                 'delivery_time': self.master_time}]
-        for item in data:
-            output = f"Package {item['package_id']:2} {item['address']:20} Delivered at {item['delivery_time']}"
-            print(output)
 
 
 def create_package_list():
@@ -247,7 +195,7 @@ def display_package_list(list):
                 print(TextColor.bright_magenta + data_line + TextColor.reset)
 
 
-def deliver_packages(package_list, stop_time=None):
+def run_delivery_simulation(package_list, stop_time=None):
     def load_truck(truck, packages):
         for i in packages:
             package = package_list.get(i)
@@ -259,6 +207,14 @@ def deliver_packages(package_list, stop_time=None):
             original_package_list.append(truck.deliver_next().get_data())
         truck.deliver_next()
 
+    def print_truck_status(truck):
+        if stop_time is None:
+            print(f'\nTruck {truck.truck_number} left the Hub at {truck.next_departure_time}.  '
+                  f'Trip Number: {truck.trip_number}')
+            time.sleep(0.5)
+            display_package_list(truck.delivered_package_list)
+            print(f'\nTruck {truck.truck_number} returned to the Hub at {truck.master_time}')
+
     stop_time = parse_time_string(stop_time)
     original_package_list = []
 
@@ -266,8 +222,8 @@ def deliver_packages(package_list, stop_time=None):
         package = package_list.get(i)
         original_package_list.append(copy.copy(package.get_data()))
 
-    truck1 = Truck(1, '08:00', stop_time)
-    truck2 = Truck(2, '08:00', stop_time)
+    truck1 = Truck(1, '08:00')
+    truck2 = Truck(2, '08:00')
 
     # Load Trucks
     truck1_packages = [1, 2, 4, 13, 14, 15, 16, 19, 20, 21, 27, 33, 34, 35, 39, 40]
@@ -278,10 +234,8 @@ def deliver_packages(package_list, stop_time=None):
 
     deliver(truck1)
     deliver(truck2)
-
-    if stop_time is None:
-        display_package_list(truck1.delivered_package_list)
-        display_package_list(truck2.delivered_package_list)
+    print_truck_status(truck1)
+    print_truck_status(truck2)
 
     delayed_packages = [6, 25, 28, 32]
     for i in delayed_packages:
@@ -308,14 +262,17 @@ def deliver_packages(package_list, stop_time=None):
     load_truck(truck2, truck2_packages)
     if truck2.master_time < datetime.datetime.now().replace(hour=10, minute=20, second=0, microsecond=0):
         truck2.master_time = datetime.datetime.now().replace(hour=10, minute=20, second=0, microsecond=0)
+        truck2.next_departure_time = truck2.master_time
     deliver(truck2)
 
-    if stop_time is None:
-        display_package_list(truck1.delivered_package_list)
-        display_package_list(truck2.delivered_package_list)
+    print_truck_status(truck1)
+    print_truck_status(truck2)
 
     unique_entries = []
-    if stop_time is not None:
+    if stop_time is None:
+        print(f'Truck 1 total mileage: {truck1.mileage}')
+        print(f'Truck 2 total mileage: {truck2.mileage}')
+    elif stop_time is not None:
         seen_keys = set()
         for entry in reversed(original_package_list):
             if entry[1] > stop_time:
@@ -340,10 +297,10 @@ while True:
     try:
         user_input = int(input(prompt))
     except ValueError:
-        print('Please enter a valid option')
+        print(TextColor.red + 'Please enter a valid option' + TextColor.reset)
         continue
     if user_input == 1:
-        deliver_packages(package_hash_table)
+        run_delivery_simulation(package_hash_table)
     elif user_input == 2:
 
         while True:
@@ -352,9 +309,9 @@ while True:
                                                         + TextColor.reset + '\n>> '
             try:
                 lookup_time = input(lookup_time_prompt)
-                package_list = deliver_packages(package_hash_table, lookup_time)
+                package_list = run_delivery_simulation(package_hash_table, lookup_time)
             except ValueError:
-                print('Please enter a valid time')
+                print(TextColor.red + 'Please enter a valid time' + TextColor.reset)
                 continue
 
             while True:
@@ -377,13 +334,13 @@ while True:
                 try:
                     lookup_selection = int(input(lookup_filter_prompt))
                 except ValueError:
-                    print('Please enter a valid option')
+                    print(TextColor.red + 'Please enter a valid option' + TextColor.reset)
                     continue
 
                 lookup_value = None
                 return_to_main_menu = False
                 if lookup_prompt_dict.get(lookup_selection) is None:
-                    print('Please make a valid selection')
+                    print(TextColor.red + 'Please make a valid selection' + TextColor.reset)
                     continue
                 elif 2 <= lookup_selection <= 7:
                     lookup_value = input(TextColor.blue +
@@ -451,4 +408,4 @@ while True:
         print('Quitting')
         break
     else:
-        print('Please enter a valid option')
+        print(TextColor.red + 'Please enter a valid option' + TextColor.reset)
