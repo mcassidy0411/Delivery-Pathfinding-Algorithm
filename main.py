@@ -4,135 +4,11 @@
 import copy
 import datetime
 import time
-
 import csv
 from TextColor import TextColor
 from HashMap import HashMap
-
-
-class AdjacencyMatrix:
-    def __init__(self):
-        self.address_dict = {}
-        self.adjacency_dict = {}
-        with open('csv/WGUPS_Distance_Table.csv') as distance_file:
-            csv_reader = csv.reader(distance_file)
-            self.adjacency_matrix = [line for line in csv_reader]
-
-            for i in range(len(self.adjacency_matrix)):
-                # Puts address in the correct format and moves to indices list.
-                # This list will look up index by address and vice versa
-                row = self.adjacency_matrix[i]
-                address = str(row.pop(0))
-                new_address = address.split('\n', 1)[-1].split(',', 1)[0].strip()
-
-                iterator = 1
-                for j in range(len(self.adjacency_matrix)):
-                    if row[j] == '':
-                        row[j] = self.adjacency_matrix[i + iterator][j - iterator + 1]
-                        iterator += 1
-                    row[j] = float(row[j])
-                self.address_dict[new_address] = i
-                self.adjacency_dict[i] = row
-
-    def get_distance_between(self, point_a, point_b):
-        point_a_index = self.address_dict[point_a]
-        point_b_index = self.address_dict[point_b]
-        adjacency_list = self.adjacency_dict[point_a_index]
-        return float(adjacency_list[point_b_index])
-
-
-class Package:
-    def __init__(self, package_id, address, city, state, zip_code, deadline, weight, notes, status):
-        self.package_id = int(package_id)
-        self.address = address
-        self.city = city
-        self.state = state
-        self.zip_code = zip_code
-        self.deadline = deadline
-        self.weight = weight
-        self.notes = notes
-        self.status = status
-        self.last_modified = datetime.datetime.now().replace(hour=8, minute=0, second=0, microsecond=0)
-
-    def get_data(self):
-        return [self.status, self.last_modified, self.package_id, self.address, self.city, self.state, self.zip_code, self.deadline, self.weight]
-
-
-class Truck:
-    def __init__(self, truck_number, departure_time):
-        self.delivery_list = [None] * 16
-        self.truck_number = truck_number
-        self.count = 0
-        self.mileage = 0.0
-        self.hub = '4001 South 700 East'
-        self.current_location = self.hub
-        self.next_departure_time = parse_time_string(departure_time)
-        self.master_time = self.next_departure_time
-        self.distance_table = AdjacencyMatrix()
-        self.trip_number = 0
-        self.status = 'At Hub'
-        self.delivered_package_list = []
-
-    def add(self, package):
-        if self.count == 0:
-            self.delivered_package_list = []
-            self.next_departure_time = self.master_time
-        if self.count < len(self.delivery_list):
-            package.status = f'On Truck {self.truck_number} for delivery'
-            self.delivery_list[self.count] = package
-            self.count += 1
-            return True
-        return False
-
-    def deliver_next(self):
-        if self.count != 0:
-            current_package = self.delivery_list[0]
-            shortest_distance = self.distance_table.get_distance_between(self.current_location,
-                                                                         self.delivery_list[0].address)
-            for j in range(self.count):
-                distance = self.distance_table.get_distance_between(self.current_location,
-                                                                    self.delivery_list[j].address)
-                if distance <= shortest_distance:
-                    shortest_distance = distance
-                    current_package = self.delivery_list[j]
-
-            self.current_location = current_package.address
-            self.status = f'En Route to {self.current_location} at {self.master_time}'
-
-            self.set_time(shortest_distance)
-            self.set_mileage(shortest_distance)
-            current_package.status = f'Delivered'
-            current_package.last_modified = self.master_time
-
-            self.delivered_package_list.append(current_package)
-
-            self.delivery_list.pop(self.delivery_list.index(current_package))
-            self.count -= 1
-            return current_package
-        else:
-            self.return_to_hub()
-
-    def calculate_time(self, distance):
-        hours = distance / 18
-        current_time = self.master_time
-        current_time += datetime.timedelta(hours=hours)
-        return current_time
-
-    def set_time(self, distance):
-        hours = distance / 18
-        self.master_time += datetime.timedelta(hours=hours)
-
-    def set_mileage(self, distance):
-        self.mileage += distance
-
-    def return_to_hub(self):
-        distance_to_hub = self.distance_table.get_distance_between(self.current_location, self.hub)
-        self.set_time(distance_to_hub)
-        self.set_mileage(distance_to_hub)
-        self.delivery_list = [None] * 16
-        self.count = 0
-        self.trip_number += 1
-        self.status = f'Returned to Hub at {self.master_time}'
+from Package import Package
+from Truck import Truck
 
 
 def create_package_list():
@@ -150,14 +26,6 @@ def create_package_list():
 
             h.add(int(line[0]), Package(line[0], line[1], line[2], line[3], line[4], line[5], line[6], notes, status))
     return h
-
-
-def parse_time_string(time):
-    try:
-        hours, minutes = time.split(":")
-        return datetime.datetime.now().replace(hour=int(hours), minute=int(minutes), second=0, microsecond=0)
-    except AttributeError:
-        return None
 
 
 def display_package_list(list):
@@ -215,7 +83,26 @@ def run_delivery_simulation(package_list, stop_time=None):
             display_package_list(truck.delivered_package_list)
             print(f'\nTruck {truck.truck_number} returned to the Hub at {truck.master_time}')
 
-    stop_time = parse_time_string(stop_time)
+
+
+
+
+    lookup_prompt_hashmap = HashMap()
+
+    lookup_prompt_list = [[1, 'All Packages'], [2, 'Package ID'], [3, 'Address'], [4, 'City'],
+                          [5, 'Zip Code'], [6, 'Package Weight'], [7, 'Delivery Deadline'], [8, 'Status'],
+                          9, 'Back to Main Menu']
+
+    for i in range(len(lookup_prompt_list) - 1):
+        row = lookup_prompt_list[i]
+        lookup_prompt_hashmap.add(row[0], row[1])
+
+    lookup_prompt_hashmap.display()
+
+
+
+
+    stop_time = Truck.parse_time_string(stop_time)
     original_package_list = []
 
     for i in range(1, package_list.number_of_items + 1):
@@ -315,15 +202,16 @@ while True:
                 continue
 
             while True:
-                lookup_prompt_dict = {1: 'All Packages',
-                                      2: 'Package ID',
-                                      3: 'Address',
-                                      4: 'City',
-                                      5: 'Zip Code',
-                                      6: 'Package Weight',
-                                      7: 'Delivery Deadline',
-                                      8: 'Status',
-                                      9: 'Back to Main Menu'}
+                lookup_prompt_hashmap = HashMap()
+
+                lookup_prompt_list = [[1, 'All Packages'], [2, 'Package ID'], [3, 'Address'], [4, 'City'],
+                                      [5, 'Zip Code'], [6, 'Package Weight'], [7, 'Delivery Deadline'], [8, 'Status'],
+                                      9, 'Back to Main Menu']
+
+                for row in lookup_prompt_list:
+                    lookup_prompt_hashmap.add(row[0], row[1])
+
+                lookup_prompt_hashmap.display()
 
                 lookup_filter_prompt = TextColor.blue + '\nWhat would you like to look up?\n\n' \
                                         + TextColor.reset
