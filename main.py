@@ -175,27 +175,44 @@ class Main:
         # Return the list
         return unique_entries
 
-    # Command Line Interface
+    # Command Line Interface.  Handles all user input and displays data based on the input.  The four while True
+    # loops check for a condition and break on that condition and do not depend on the size of any input.
+    # O(1) + O(1) + O(1) + O(1) = O(4) -> O(1).  The inner two for loops are dependent on the size of their respective
+    # inputs, but are sequential to each other and only nested in O(1) loops.  O(n) + O(n) = O(2n) -> O(n).
+    # Total complexity from here to end: O(1) + (1) + O(1) + O(1) + O(n) + O(n) = O(3 + 2n) -> O(n)
+
+    # while True loop breaks when user_input == 3.  O(1)
     while True:
+        # Create HashTable containing all packages
         package_hash_table = PackageHandler.create_package_list()
 
+        # Initial menu prompt to user
         prompt = TextColor.blue + '\nWhat would you like to do?\n' + TextColor.reset + \
                                             '\n1. Begin delivery simulation' \
                                             '\n2. Lookup Package' \
                                             '\n3. Quit\n\n>> '
+
+        # Handle user input accounting for errors
         try:
             user_input = int(input(prompt))
         except ValueError:
             print(TextColor.red + 'Please enter a valid option' + TextColor.reset)
             continue
+
+        # On input 1, run delivery simulation.  stop_time is None and all dependant print statements will be displayed
+        # in the run_delivery_simulation function
         if user_input == 1:
             run_delivery_simulation(package_hash_table)
         elif user_input == 2:
 
+            # When inner while True loop breaks on lookup_selection == 9, return_to_main_menu is set to True and this loop
+            # breaks.  O(1)
             while True:
+                # Set user prompt for this layer of menu
                 lookup_time_prompt = TextColor.blue + '\nEnter a time in 24 hour format ("HH:MM") to check the ' \
-                                                            'status of deliveries: (For example, "13:15" for 1:15 PM)\n' \
-                                                            + TextColor.reset + '\n>> '
+                                                        'status of deliveries: (For example, "13:15" for 1:15 PM)\n' \
+                                                        + TextColor.reset + '\n>> '
+                # Handle user input which must be a string that can be parsed to a datetime object
                 try:
                     lookup_time = input(lookup_time_prompt)
                     package_list = run_delivery_simulation(package_hash_table, lookup_time)
@@ -203,22 +220,29 @@ class Main:
                     print(TextColor.red + '\nPlease enter a valid time' + TextColor.reset)
                     continue
 
+                # while True loop breaks on lookup_selection == 9.  O(1)
                 while True:
+                    # Store menu prompts in a list
                     lookup_prompt_list = [[1, 'All Packages'], [2, 'Package ID'], [3, 'Address'], [4, 'City'],
                                           [5, 'Zip Code'], [6, 'Package Weight'], [7, 'Delivery Deadline'], [8, 'Status'],
                                           [9, 'Back to Main Menu']]
 
-                    lookup_prompt_hashmap = HashTable()
+                    # Create HashTable to ultimately hold menu prompts
+                    lookup_prompt_hashtable = HashTable()
+
+                    # Add all items in lookup_prompt_list to lookup_prompt_hashtable.  O(n)
                     for i in range(len(lookup_prompt_list)):
                         row = lookup_prompt_list[i]
-                        lookup_prompt_hashmap.add(row[0], row[1])
+                        lookup_prompt_hashtable.add(row[0], row[1])
 
+                    # Set next prompt to user
                     lookup_filter_prompt = TextColor.blue + '\nWhat would you like to look up?\n' \
                                             + TextColor.reset
 
+                    # Handle next user input
                     print(lookup_filter_prompt)
-                    for i in range(1, lookup_prompt_hashmap.number_of_items + 1):
-                        print(f'{i}. {lookup_prompt_hashmap.get(i)}')
+                    for i in range(1, lookup_prompt_hashtable.number_of_items + 1):
+                        print(f'{i}. {lookup_prompt_hashtable.get(i)}')
 
                     try:
                         lookup_selection = int(input('\n>> '))
@@ -226,16 +250,21 @@ class Main:
                         print(TextColor.red + 'Please enter a valid option' + TextColor.reset)
                         continue
 
+                    # Set lookup_value to initial value of None.  If lookup_value remains None, all packages at the
+                    # user-specified time will be displayed
                     lookup_value = None
+                    # Boolean used to break second while True loop when lookup_selection == 9
                     return_to_main_menu = False
-                    if lookup_prompt_hashmap.get(lookup_selection) is None:
+                    # Handle user input for valid and invalid lookup filter selections
+                    if lookup_prompt_hashtable.get(lookup_selection) is None:
                         print(TextColor.red + 'Please make a valid selection' + TextColor.reset)
                         continue
                     elif 2 <= lookup_selection <= 7:
                         lookup_value = input(TextColor.blue +
-                                             f'\nPlease enter the {lookup_prompt_hashmap.get(lookup_selection)}:\n'
+                                             f'\nPlease enter the {lookup_prompt_hashtable.get(lookup_selection)}:\n'
                                              + TextColor.reset + '\n>> ').lower()
                     elif lookup_selection == 8:
+                        # while True loop breaks on valid user input
                         while True:
                             try:
                                 status_selection = int(input(TextColor.blue + '\nPlease select a status:' + TextColor.reset
@@ -255,11 +284,18 @@ class Main:
                             except ValueError:
                                 print(TextColor.red + 'Please select a valid option' + TextColor.reset)
                                 continue
+
+                    # Sets return_to_main_menu to True to break this and the next outer loop
                     elif lookup_selection == 9:
                         return_to_main_menu = True
                         break
 
+                    # Initialize empty list to hold filtered data to display to user
                     filtered_list = []
+
+                    # Iterates through unique list of all packages with the most recent status prior to stop_time
+                    # (returned from run_delivery_simulation).  When user-defined condition is met, appends package
+                    # to filtered_list
                     for package in package_list:
                         current_package = package
                         if lookup_selection == 1:
@@ -268,7 +304,6 @@ class Main:
                         elif lookup_selection == 2:
                             if current_package[2] == int(lookup_value):
                                 filtered_list.append(current_package)
-                                break
                         elif lookup_selection == 3:
                             if current_package[3].lower() == lookup_value:
                                 filtered_list.append(current_package)
@@ -288,10 +323,18 @@ class Main:
                             if lookup_value in current_package[0].lower():
                                 filtered_list.append(current_package)
 
-                    # print(f'Displaying {lookup_prompt_hashmap.get()}')
+                    # Echo back user selection and input for filter criteria
+                    display_label = f'\nDisplaying All Packages'
+                    if lookup_selection == 1:
+                        print(TextColor.blue + display_label + TextColor.reset)
+                    elif 2 <= lookup_selection <= 8:
+                        print(TextColor.blue + display_label + f' with {lookup_prompt_hashtable.get(lookup_selection)} '
+                                                            + TextColor.green + f'{lookup_value}' + TextColor.reset)
 
+                    # Print filtered_list to console
                     PackageHandler.display_package_list(filtered_list)
 
+                # Breaks second while True loop when return_to_main_menu == True
                 if return_to_main_menu:
                     break
 
