@@ -5,73 +5,96 @@ import time
 import PackageHandler
 import TimeUtils
 from TextColor import TextColor
-from HashMap import HashMap
+from HashTable import HashTable
 from Truck import Truck
 
 
 class Main:
+    # Driver code for delivery simulation.  Takes HashTable object containing Package objects and optional stop_time
+    # parameter to filter results when a time is specified by the user.  O(5n) -> O(n)
     def run_delivery_simulation(package_list, stop_time=None):
+        # Helper function to add Package objects to Truck objects, updates package status, appends package information
+        # to package_status_changed_list.  O(n)
         def load_truck(truck, packages):
             for i in packages:
                 package = package_list.get(i)
                 package.status = f'On Truck {truck.truck_number} for delivery'
                 package.last_modified = truck.master_time
-                original_package_list.append(package.get_data())
+                package_status_changed_list.append(package.get_data())
                 truck.add(package)
 
-        def deliver(truck):
-            for i in range(truck.count):
-                original_package_list.append(truck.deliver_next().get_data())
-            truck.deliver_next()
+        # Takes Truck as input and calls run_delivery_route() to deliver all packages on the truck.  Receives a list of
+        # packages that were delivered by the truck and appends package data to the package_status_changed_list.  O(n)
+        def deliver_packages(truck):
+            delivered_list = truck.run_delivery_route()
+            for package in delivered_list:
+                package_status_changed_list.append(package.get_data())
 
+        # Uses Truck object attributes to print departure and return time of truck to console when stop_time is None.
+        # O(1)
         def print_truck_status(truck):
             if no_stop_time:
-                print(TextColor.bright_blue + f'\nTruck {truck.truck_number} left the Hub at {truck.next_departure_time}.'
-                      f' Trip Number: {truck.trip_number}' + TextColor.reset)
+                print(TextColor.bright_blue + f'\nTruck {truck.truck_number} left the Hub at '
+                                              f'{truck.next_departure_time}.  Trip Number: {truck.trip_number}'
+                                                + TextColor.reset)
                 time.sleep(0.5)
                 PackageHandler.display_package_list(truck.delivered_package_list)
                 print(TextColor.bright_blue + f'\nTruck {truck.truck_number} returned to the Hub at {truck.master_time}'
                       + TextColor.reset)
 
+        # Sets stop_time if provided by user.  Sets no_stop_time, a boolean variable that this function uses to
+        # determine what should be printed to the console
         stop_time = TimeUtils.parse_time_string(stop_time)
         no_stop_time = False
         if stop_time is None:
             no_stop_time = True
 
-        original_package_list = []
-
+        # Retrieves all Package objects from the package_list HashTable and stores in package_status_changed_list.
+        # package_status_changed_list contains every Package object and whenever a Package's status is changed, it
+        # is appended to the list with the time it was changed.  This list is later used to filter results displayed
+        # based on user input O(n)
+        package_status_changed_list = []
         for i in range(1, package_list.number_of_items + 1):
             package = package_list.get(i)
-            original_package_list.append(copy.copy(package.get_data()))
+            package_status_changed_list.append(copy.copy(package.get_data()))
 
+        # Instantiate Truck objects
         truck1 = Truck(1, '08:00')
         truck2 = Truck(2, '08:00')
 
-        # Load Trucks
+        # Define first set of packages to be loaded on every truck
         truck1_packages = [1, 2, 4, 13, 14, 15, 16, 19, 20, 21, 27, 33, 34, 35, 39, 40]
         truck2_packages = [3, 5, 7, 8, 10, 11, 17, 18, 22, 23, 24, 29, 30, 36, 37, 38]
 
+        # Load Trucks
         load_truck(truck1, truck1_packages)
         load_truck(truck2, truck2_packages)
 
-        deliver(truck1)
-        deliver(truck2)
+        # Call deliver_packages to run first delivery for each Truck
+        deliver_packages(truck1)
+        deliver_packages(truck2)
+        # Call print_truck_status for each Truck
         print_truck_status(truck1)
         print_truck_status(truck2)
 
+        # Update delayed packages to show status 'At Hub' and status change at 9:05.  O(n)
         delayed_packages = [6, 25, 28, 32]
         for i in delayed_packages:
             package = package_list.get(i)
             package.status = 'At Hub'
             package.last_modified = TimeUtils.parse_time_string('09:05')
-            original_package_list.append(package.get_data())
+            package_status_changed_list.append(package.get_data())
+            # Print notification to console if no stop time was provided
             if no_stop_time:
-                print(TextColor.bright_yellow + f'\nAt 9:05, Package {package.package_id} arrived at the Hub' + TextColor.reset)
+                print(TextColor.bright_yellow + f'\nAt 9:05, Package {package.package_id} arrived at the Hub'
+                      + TextColor.reset)
 
+        # As above, define next packages for truck_1 to deliver, load truck_1 with packages and run delivery
         truck1_packages = [6, 25, 26, 31, 32]
         load_truck(truck1, truck1_packages)
-        deliver(truck1)
+        deliver_packages(truck1)
 
+        # Update address of package 9, append package 9 with status change and time to package_status_changed_list
         package9 = package_list.get(9)
         package9.address = '410 S State St'
         package9.city = 'Salt Lake City'
@@ -80,26 +103,38 @@ class Main:
         package9.notes = 'Address Corrected'
         package9.status = 'At Hub'
         package9.last_modified = TimeUtils.parse_time_string('10:20')
-        original_package_list.append(package9.get_data())
+        package_status_changed_list.append(package9.get_data())
 
+        # Define next packages for truck_2 to deliver and load truck_2 with packages
         truck2_packages = [9, 12, 28]
         load_truck(truck2, truck2_packages)
+
+        # If Truck 2's time is prior to 10:20, it will wait at the hub until 10:20 when Package 9's address is known,
+        # so truck2.master_time and next_departure_time is updated to 10:20
         if truck2.master_time < TimeUtils.parse_time_string('10:20'):
+            # Print status if stop_time not given
             if no_stop_time:
                 print(TextColor.red + '\nTruck 2 Holding until 10:20 for correct address on Package 9'
                       + TextColor.reset)
             truck2.master_time = TimeUtils.parse_time_string('10:20')
             truck2.next_departure_time = truck2.master_time
 
+        # Print Package 9 address updated notification to console if no_stop time provided
         if no_stop_time:
             print(TextColor.bright_yellow + "\nAt 10:20, Package 9's address was corrected." + TextColor.reset)
 
-        deliver(truck2)
+        # Deliver truck2 packages
+        deliver_packages(truck2)
 
+        # Calls print_truck_status for each truck
         print_truck_status(truck1)
         print_truck_status(truck2)
 
+        # Initialize empty list unique_entries to hold one unique entry for each package.
         unique_entries = []
+
+        # If stop_time not provided, calculate total time trucks were making deliveries and print Summary of time
+        # and distance travelled to console.  For this if-else block, O(n)
         if no_stop_time:
             truck1_total_time = truck1.master_time - TimeUtils.parse_time_string("08:00")
             truck2_total_time = truck2.master_time - TimeUtils.parse_time_string("08:00")
@@ -110,20 +145,37 @@ class Main:
             print(f'Total Mileage Travelled by all Trucks: {round(truck1.mileage + truck2.mileage)}')
             print(f'Total Delivery Time for all Trucks: {truck1_total_time + truck2_total_time}')
             print(TextColor.bright_green + '--------------------------------------------' + TextColor.reset)
+
+        # If stop_time was provided, the unique_entries list will be populated with a unique list of all packages with
+        # their most recent status prior to the stop_time:
         else:
+            # Create a set to store unique package ID's
             seen_keys = set()
-            for entry in reversed(original_package_list):
+            # Iterate through package_status_changed_list starting at the bottom (packages with most recent status
+            # changes).  O(n)
+            for entry in reversed(package_status_changed_list):
+                # If the package's status change time is after the stop_time, remove the entry from the list
                 if entry[1] > stop_time:
-                    original_package_list.remove(entry)
+                    package_status_changed_list.remove(entry)
+
+                # If the package's status change time is before the stop_time:
                 else:
+                    # Check if the Package ID exists in seen_keys already
                     key = entry[2]
+                    # If not in seen_keys, this is the most recent version of the package in the
+                    # package_status_changed_list that is before the stop time.  Append package information to
+                    # unique_entries and add key (package ID) to seen_keys.  O(1) as 'if key not in seen_keys:' is a
+                    # Python set function and doesn't iterate over the entire set to determine this condition
                     if key not in seen_keys:
                         unique_entries.append(entry)
                         seen_keys.add(key)
 
-        unique_entries.sort()
+        # Sort unique_entries by package ID
+        unique_entries.sort(key=lambda entry: entry[2])
+        # Return the list
         return unique_entries
 
+    # Command Line Interface
     while True:
         package_hash_table = PackageHandler.create_package_list()
 
@@ -156,7 +208,7 @@ class Main:
                                           [5, 'Zip Code'], [6, 'Package Weight'], [7, 'Delivery Deadline'], [8, 'Status'],
                                           [9, 'Back to Main Menu']]
 
-                    lookup_prompt_hashmap = HashMap()
+                    lookup_prompt_hashmap = HashTable()
                     for i in range(len(lookup_prompt_list)):
                         row = lookup_prompt_list[i]
                         lookup_prompt_hashmap.add(row[0], row[1])
@@ -235,6 +287,8 @@ class Main:
                         elif lookup_selection == 8:
                             if lookup_value in current_package[0].lower():
                                 filtered_list.append(current_package)
+
+                    # print(f'Displaying {lookup_prompt_hashmap.get()}')
 
                     PackageHandler.display_package_list(filtered_list)
 

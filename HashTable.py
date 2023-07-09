@@ -1,19 +1,21 @@
 # Michael Cassidy, 009986687
 
-class HashMap:
+class HashTable:
+    # Constructor
     def __init__(self):
         self.size = 8
         self.map = [None] * self.size
         self.number_of_items = 0
 
-    def get_hash(self, key):
-        hash = 0
-        for char in str(key):
-            hash += ord(char)
-        return hash % self.size
+    # TODO just use hashing function
+    def generate_hash(self, key):
+        # hash = 0
+        # for char in str(key):
+        #     hash += ord(char)
+        return hash(key) % self.size
 
     def add(self, key, value):
-        key_hash = self.get_hash(key)
+        key_hash = self.generate_hash(key)
         key_value = [key, value]
         self.number_of_items += 1
         if self.map[key_hash] is None:
@@ -28,7 +30,7 @@ class HashMap:
             return True
 
     def get(self, key):
-        key_hash = self.get_hash(key)
+        key_hash = self.generate_hash(key)
         if self.map[key_hash] is not None:
             for item in self.map[key_hash]:
                 if item[0] == key:
@@ -36,7 +38,7 @@ class HashMap:
         return None
 
     def delete(self, key):
-        key_hash = self.get_hash(key)
+        key_hash = self.generate_hash(key)
 
         if self.map[key_hash] is None:
             return False

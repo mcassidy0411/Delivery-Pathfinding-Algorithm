@@ -1,6 +1,6 @@
 # Michael Cassidy, 009986687
 
-from HashMap import HashMap
+from HashTable import HashTable
 from TextColor import TextColor
 from Package import Package
 import csv
@@ -43,7 +43,7 @@ def display_package_list(package_list):
 
 
 def create_package_list():
-    h = HashMap()
+    h = HashTable()
     with open('csv/WGUPS_Package_File.csv') as package_file:
         csv_reader = csv.reader(package_file)
         for line in csv_reader:

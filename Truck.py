@@ -1,5 +1,6 @@
 # Michael Cassidy, 009986687
 
+import TimeUtils
 import datetime
 from AdjacencyMatrix import AdjacencyMatrix
 
@@ -12,7 +13,7 @@ class Truck:
         self.mileage = 0.0
         self.hub = '4001 South 700 East'
         self.current_location = self.hub
-        self.next_departure_time = self.parse_time_string(departure_time)
+        self.next_departure_time = TimeUtils.parse_time_string(departure_time)
         self.master_time = self.next_departure_time
         self.distance_table = AdjacencyMatrix()
         self.trip_number = 0
@@ -30,32 +31,43 @@ class Truck:
             return True
         return False
 
-    def deliver_next(self):
-        if self.count != 0:
-            current_package = self.delivery_list[0]
-            shortest_distance = self.distance_table.get_distance_between(self.current_location,
-                                                                         self.delivery_list[0].address)
-            for j in range(self.count):
-                distance = self.distance_table.get_distance_between(self.current_location,
-                                                                    self.delivery_list[j].address)
-                if distance <= shortest_distance:
-                    shortest_distance = distance
-                    current_package = self.delivery_list[j]
+    # Core Algorithm.  Utilizes a nearest neighbor approach to determine the closest unvisited location to the current
+    # location.  Delivers all packages along the path the algorithm determines.  Updates package and truck status.
+    # The outer loop will iterate n times and for each iteration of the outer loop, the inner loop will iterate n times,
+    # where n is the number of packages.  O(n * n) = O(n^2)
+    def run_delivery_route(self):
+        # self.count and delivery_list are equal to the number of packages on the truck, so while self.count is greater
+        # than or equal to 0, iterate this loop
+        while self.count >= 0:
+            if self.count != 0:
+                # Set initial value for the package and the distance between that package and the current location for
+                # algorithm to compare
+                current_package = self.delivery_list[0]
+                shortest_distance = self.distance_table.get_distance_between(self.current_location,
+                                                                                   self.delivery_list[0].address)
 
-            self.current_location = current_package.address
-            self.status = f'En Route to {self.current_location} at {self.master_time}'
-            self.set_time(shortest_distance)
-            self.set_mileage(shortest_distance)
-            current_package.status = f'Delivered'
-            current_package.last_modified = self.master_time
+                # For each Package in the
+                for j in range(self.count):
+                    distance = self.distance_table.get_distance_between(self.current_location,
+                                                                        self.delivery_list[j].address)
+                    if distance <= shortest_distance:
+                        shortest_distance = distance
+                        current_package = self.delivery_list[j]
 
-            self.delivered_package_list.append(current_package)
+                self.current_location = current_package.address
+                self.status = f'En Route to {self.current_location} at {self.master_time}'
+                self.set_time(shortest_distance)
+                self.set_mileage(shortest_distance)
+                current_package.status = f'Delivered'
+                current_package.last_modified = self.master_time
 
-            self.delivery_list.pop(self.delivery_list.index(current_package))
-            self.count -= 1
-            return current_package
-        else:
-            self.return_to_hub()
+                self.delivered_package_list.append(current_package)
+
+                self.delivery_list.pop(self.delivery_list.index(current_package))
+                self.count -= 1
+            else:
+                self.return_to_hub()
+                return self.delivered_package_list
 
     def calculate_time(self, distance):
         hours = distance / 18
@@ -78,10 +90,3 @@ class Truck:
         self.count = 0
         self.trip_number += 1
         self.status = f'Returned to Hub at {self.master_time}'
-
-    def parse_time_string(self, time):
-        try:
-            hours, minutes = time.split(":")
-            return datetime.datetime.now().replace(hour=int(hours), minute=int(minutes), second=0, microsecond=0)
-        except AttributeError:
-            return None

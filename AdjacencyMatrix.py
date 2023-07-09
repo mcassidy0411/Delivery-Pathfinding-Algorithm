@@ -1,13 +1,13 @@
 # Michael Cassidy, 009986687
 
 import csv
-from HashMap import HashMap
+from HashTable import HashTable
 
 
 class AdjacencyMatrix:
     def __init__(self):
-        self.address_index_hashmap = HashMap()
-        self.distance_hashmap = HashMap()
+        self.address_index_hashmap = HashTable()
+        self.distance_hashmap = HashTable()
         with open('csv/WGUPS_Distance_Table.csv') as distance_file:
             csv_reader = csv.reader(distance_file)
             self.adjacency_matrix = [line for line in csv_reader]
