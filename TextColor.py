@@ -1,5 +1,7 @@
 # Michael Cassidy, 009986687
 
+# Reference to convert color escape sequences into more meaningful words.  Used to adjust the text color of data
+# printed to the console O(1)
 class TextColor:
     black = '\033[30m'
     red = '\033[31m'

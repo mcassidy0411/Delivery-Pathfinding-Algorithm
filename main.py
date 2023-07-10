@@ -174,6 +174,7 @@ class Main:
         unique_entries.sort(key=lambda entry: entry[2])
         # Return the list
         return unique_entries
+    # End of run_delivery_simulation() function
 
     # Command Line Interface.  Handles all user input and displays data based on the input.  The four while True
     # loops check for a condition and break on that condition and do not depend on the size of any input.
@@ -323,13 +324,18 @@ class Main:
                             if lookup_value in current_package[0].lower():
                                 filtered_list.append(current_package)
 
-                    # Echo back user selection and input for filter criteria
+                    # Echo back user selection, time and input for filter criteria
                     display_label = f'\nDisplaying All Packages'
                     if lookup_selection == 1:
-                        print(TextColor.blue + display_label + TextColor.reset)
+                        print(TextColor.blue + display_label + TextColor.blue + ' as of ' + TextColor.green
+                                                            + f'{TimeUtils.parse_time_string(lookup_time)}'
+                                                            + TextColor.reset)
                     elif 2 <= lookup_selection <= 8:
                         print(TextColor.blue + display_label + f' with {lookup_prompt_hashtable.get(lookup_selection)} '
-                                                            + TextColor.green + f'{lookup_value}' + TextColor.reset)
+                                                            + TextColor.green + f'{lookup_value} ' + TextColor.reset
+                                                            + TextColor.blue + 'as of ' + TextColor.green
+                                                            + f'{TimeUtils.parse_time_string(lookup_time)}'
+                                                            + TextColor.reset)
 
                     # Print filtered_list to console
                     PackageHandler.display_package_list(filtered_list)
