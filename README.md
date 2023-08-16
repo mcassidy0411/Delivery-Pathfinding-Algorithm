@@ -1,16 +1,13 @@
 # Delivery Simulator (Python)
-## INTRODUCTION
+## Introduction
 
 ```text
 For this assessment, you will apply the algorithms and data structures you studied in this course to solve a real programming problem. You will implement an algorithm to route
 delivery trucks that will allow you to meet all delivery deadlines while traveling the least number of miles. You will also describe and justify the decisions you made while creating
 this program.
-
-The skills you showcase in your completed project may be useful in responding to technical interview questions for future employment. This project may also be added to your
-portfolio to show to future employers.
 ```
 
-## SCENARIO
+## Scenario
 
 ```text
 The Western Governors University Parcel Service (WGUPS) needs to determine the best route and delivery distribution for their Daily Local Deliveries (DLD) because packages
@@ -30,8 +27,9 @@ The intent is to use this solution (program) for this specific location and to u
 include detailed comments, following the industry-standard Python style guide, to make your code easy to read and to justify the decisions you made while writing your program.
 ```
 
-#### Assumptions
+## Assumptions
 
+```text
 - Each truck can carry a maximum of 16 packages.
 - Trucks travel at an average speed of 18 miles per hour.
 - Trucks have a “infinite amount of gas” with no need to stop.
@@ -42,8 +40,9 @@ include detailed comments, following the industry-standard Python style guide, t
 - The wrong delivery address for package #9, Third District Juvenile Court, will be corrected at 10:20 a.m. The correct address is 410 S State St., Salt Lake City, UT 84111.
 - The package ID is unique; there are no collisions.
 - No further assumptions exist or are allowed.
+```
 
-## REQUIREMENTS
+## Requirements
 
 ```text
 Your submission must be your original work. No more than a combined total of 30% of the submission and no more than a 10% match to any one individual source can be directly
